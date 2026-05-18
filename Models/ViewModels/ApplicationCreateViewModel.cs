@@ -8,7 +8,7 @@ namespace CareerTrack.Models.ViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Şirket seçimi zorunludur.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Şirket seçimi zorunludur.")]
         [Display(Name = "Şirket")]
         public int CompanyId { get; set; }
 

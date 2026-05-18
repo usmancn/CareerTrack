@@ -1,0 +1,113 @@
+@model List<JobApplication>
+@{
+    ViewData["Title"] = "Gelen Başvurular";
+}
+
+<h4 class="mb-4">📨 Şirketinize Gelen Başvurular</h4>
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-hover shadow-sm rounded">
+            <thead class="table-dark">
+                <tr>
+                    <th>Öğrenci</th>
+                    <th>Bölüm</th>
+                    <th>Pozisyon</th>
+                    <th>Başvuru Tarihi</th>
+                    <th>Staj Türü</th>
+                    <th>Durum</th>
+                    <th class="text-end">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var app in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@app.Student?.FullName</td>
+                        <td>@app.Student?.Department</td>
+                        <td>@app.Position</td>
+                        <td>@app.ApplicationDate.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            @switch (app.InternshipType)
+                            {
+                                case InternshipType.Voluntary:
+                                    <span>Gönüllü</span>
+                                    break;
+                                case InternshipType.MandatoryShort:
+                                    <span>Zorunlu Kısa</span>
+                                    break;
+                                case InternshipType.LongTerm:
+                                    <span>Uzun Dönem</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            @switch (app.Status)
+                            {
+                                case ApplicationStatus.Pending:
+                                    <span class="badge bg-warning text-dark">Bekliyor</span>
+                                    break;
+                                case ApplicationStatus.InReview:
+                                    <span class="badge bg-info">Değerlendirmede</span>
+                                    break;
+                                case ApplicationStatus.Offered:
+                                    <span class="badge bg-success">Teklif Gönderildi</span>
+                                    break;
+                                case ApplicationStatus.Rejected:
+                                    <span class="badge bg-danger">Reddedildi</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown">
+                                    Durum Güncelle
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    @foreach (ApplicationStatus status in Enum.GetValues(typeof(ApplicationStatus)))
+                                    {
+                                        <li>
+                                            <form asp-action="UpdateApplicationStatus" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@app.Id" />
+                                                <input type="hidden" name="status" value="@status" />
+                                                <button type="submit" class="dropdown-item @(app.Status == status ? "active" : "")">
+                                                    @switch (status)
+                                                    {
+                                                        case ApplicationStatus.Pending:
+                                                            <text>⏳ Bekliyor</text>
+                                                            break;
+                                                        case ApplicationStatus.InReview:
+                                                            <text>🔍 Değerlendirmede</text>
+                                                            break;
+                                                        case ApplicationStatus.Offered:
+                                                            <text>✅ Teklif Gönder</text>
+                                                            break;
+                                                        case ApplicationStatus.Rejected:
+                                                            <text>❌ Reddet</text>
+                                                            break;
+                                                    }
+                                                </button>
+                                            </form>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <h5 class="mt-3 text-muted">Henüz şirketinize başvuru yapılmamış</h5>
+        </div>
+    </div>
+}

@@ -1,4 +1,5 @@
 using CareerTrack.Data;
+using CareerTrack.Models.Constants;
 using CareerTrack.Models.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CareerTrack.Controllers
 {
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = AppRoles.Student)]
     public class ToDoController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -59,6 +60,34 @@ namespace CareerTrack.Controllers
             });
             await _context.SaveChangesAsync();
             TempData["Success"] = "Görev eklendi!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, string taskTitle, DateTime dueDate)
+        {
+            var userId = await GetUserIdAsync();
+            var todo = await _context.ToDos.FirstOrDefaultAsync(t => t.Id == id && t.StudentId == userId);
+            if (todo == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(taskTitle) || taskTitle.Trim().Length < 3)
+            {
+                TempData["Error"] = "Görev başlığı en az 3 karakter olmalıdır.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (dueDate < DateTime.Today)
+            {
+                TempData["Error"] = "Bitiş tarihi geçmiş bir tarih olamaz.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            todo.TaskTitle = taskTitle.Trim();
+            todo.DueDate = dueDate;
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Görev güncellendi!";
             return RedirectToAction(nameof(Index));
         }
 

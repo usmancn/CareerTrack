@@ -1,0 +1,149 @@
+@model CareerTrack.Models.ViewModels.SchoolDashboardViewModel
+@{
+    ViewData["Title"] = "Okul Paneli";
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-blue">
+            <div class="stat-icon"><i class="bi bi-mortarboard"></i></div>
+            <div class="stat-value">@Model.TotalStudents</div>
+            <div class="stat-label">Öğrenci</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-orange">
+            <div class="stat-icon"><i class="bi bi-send"></i></div>
+            <div class="stat-value">@Model.TotalApplications</div>
+            <div class="stat-label">Başvuru</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-red">
+            <div class="stat-icon"><i class="bi bi-journal-x"></i></div>
+            <div class="stat-value">@Model.PendingDailyLogs</div>
+            <div class="stat-label">Onay Bekleyen</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-green">
+            <div class="stat-icon"><i class="bi bi-journal-check"></i></div>
+            <div class="stat-value">@Model.TotalDailyLogs</div>
+            <div class="stat-label">Toplam Günlük</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card-section">
+            <div class="section-header">
+                <span><i class="bi bi-journal-check me-2"></i>Onay Akışı</span>
+                <a asp-action="DailyLogs" class="see-all">Tümünü Gör</a>
+            </div>
+            @if (!Model.RecentDailyLogs.Any())
+            {
+                <div class="empty-state"><i class="bi bi-inbox"></i><p>Henüz günlük yok</p></div>
+            }
+            @foreach (var log in Model.RecentDailyLogs)
+            {
+                <div class="list-item">
+                    <div class="list-item-icon">
+                        <i class="bi bi-journal-text"></i>
+                    </div>
+                    <div class="list-item-body">
+                        <div class="list-item-title">@log.Student?.FullName</div>
+                        <div class="list-item-sub">@log.DayNumber. Gün • @log.LogDate.ToString("dd.MM.yyyy")</div>
+                    </div>
+                    <span class="badge @(log.IsApprovedByAdmin ? "bg-success" : "bg-warning text-dark")">
+                        @(log.IsApprovedByAdmin ? "Onaylandı" : "Bekliyor")
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card-section">
+            <div class="section-header">
+                <span><i class="bi bi-briefcase me-2"></i>Son Başvurular</span>
+                <a asp-action="Applications" class="see-all">Tümünü Gör</a>
+            </div>
+            @if (!Model.RecentApplications.Any())
+            {
+                <div class="empty-state"><i class="bi bi-send-slash"></i><p>Henüz başvuru yok</p></div>
+            }
+            @foreach (var app in Model.RecentApplications)
+            {
+                <div class="list-item">
+                    <div class="list-item-icon interview-icon">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div class="list-item-body">
+                        <div class="list-item-title">@app.Student?.FullName</div>
+                        <div class="list-item-sub">@app.Company?.Name • @app.Position</div>
+                    </div>
+                    <span class="status-badge status-@app.Status.ToString().ToLower()">
+                        @(app.Status switch {
+                            ApplicationStatus.Offered => "Teklif",
+                            ApplicationStatus.InReview => "İncelemede",
+                            ApplicationStatus.Rejected => "Reddedildi",
+                            _ => "Bekliyor"
+                        })
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Öğrenci Listesi -->
+<div class="row mt-4" id="ogrenci-listesi">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Öğrenci Takibi</h5>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Students.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Ad Soyad</th>
+                                    <th>Bölüm</th>
+                                    <th>E-posta</th>
+                                    <th class="text-end">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var student in Model.Students)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@student.FullName</td>
+                                        <td>@(student.Department ?? "—")</td>
+                                        <td>@student.Email</td>
+                                        <td class="text-end">
+                                            <a asp-action="StudentDetail" asp-route-id="@student.UserId"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye me-1"></i>Detay Görüntüle
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-person-x fs-1"></i>
+                        <p class="mt-2">Henüz kayıtlı öğrenci yok.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

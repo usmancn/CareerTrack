@@ -1,32 +1,55 @@
 using CareerTrack.Data;
+using CareerTrack.Models.Constants;
+using CareerTrack.Models.Entities;
+using CareerTrack.Models.Enums;
 using CareerTrack.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CareerTrack.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = AppRoles.Admin)]
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public AdminController(ApplicationDbContext context)
+        public AdminController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: /Admin
         public async Task<IActionResult> Index()
         {
+            var studentUsers = await _userManager.GetUsersInRoleAsync(AppRoles.Student);
+            var employerUsers = await _userManager.GetUsersInRoleAsync(AppRoles.Employer);
+            var schoolUsers = await _userManager.GetUsersInRoleAsync(AppRoles.School);
+
             var vm = new AdminDashboardViewModel
             {
-                TotalStudents = await _context.Users.CountAsync(),
+                TotalStudents = studentUsers.Count,
+                TotalEmployers = employerUsers.Count,
+                TotalSchools = schoolUsers.Count,
+                TotalUsers = studentUsers.Count + employerUsers.Count + schoolUsers.Count,
+
                 TotalApplications = await _context.JobApplications.CountAsync(),
                 TotalOffered = await _context.JobApplications
                     .CountAsync(a => a.Status == Models.Enums.ApplicationStatus.Offered),
+                PendingApplications = await _context.JobApplications
+                    .CountAsync(a => a.Status == Models.Enums.ApplicationStatus.Pending),
+
                 PendingDailyLogs = await _context.DailyLogs.CountAsync(d => !d.IsApprovedByAdmin),
                 TotalDailyLogs = await _context.DailyLogs.CountAsync(),
+
+                TotalCompanies = await _context.Companies.CountAsync(),
+                PendingCompanies = await _context.Companies.CountAsync(c => !c.IsApproved),
+
+                TotalJobPostings = await _context.JobPostings.CountAsync(),
+                ActiveJobPostings = await _context.JobPostings.CountAsync(jp => jp.IsActive),
 
                 RecentDailyLogs = await _context.DailyLogs
                     .Include(d => d.Student)
@@ -39,10 +62,98 @@ namespace CareerTrack.Controllers
                     .Include(a => a.Student)
                     .OrderByDescending(a => a.ApplicationDate)
                     .Take(10)
+                    .ToListAsync(),
+
+                PendingCompanyList = await _context.Companies
+                    .Include(c => c.CreatedBy)
+                    .Where(c => !c.IsApproved)
+                    .OrderBy(c => c.Name)
                     .ToListAsync()
             };
 
             return View(vm);
+        }
+
+        // GET: /Admin/Users
+        public async Task<IActionResult> Users()
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var users = await _context.Users
+                .OrderBy(u => u.FullName)
+                .ThenBy(u => u.Email)
+                .ToListAsync();
+
+            var vm = new UserRoleManagementViewModel();
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                var selectedRole = AppRoles.All.FirstOrDefault(roles.Contains) ?? AppRoles.Student;
+
+                vm.Users.Add(new UserRoleItemViewModel
+                {
+                    UserId = user.Id,
+                    FullName = user.FullName,
+                    Email = user.Email ?? string.Empty,
+                    Department = user.Department,
+                    CurrentRole = AppRoles.DisplayName(selectedRole),
+                    SelectedRole = selectedRole,
+                    IsCurrentUser = user.Id == currentUserId
+                });
+            }
+
+            return View(vm);
+        }
+
+        // POST: /Admin/UpdateUserRole
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateUserRole(string userId, string role)
+        {
+            if (!AppRoles.All.Contains(role))
+            {
+                TempData["Error"] = "Geçersiz rol seçimi.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return NotFound();
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (user.Id == _userManager.GetUserId(User) && role != AppRoles.Admin)
+            {
+                TempData["Error"] = "Kendi Admin rolünüzü bu ekrandan kaldıramazsınız.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            if (currentRoles.Contains(AppRoles.Admin) && role != AppRoles.Admin)
+            {
+                var adminUsers = await _userManager.GetUsersInRoleAsync(AppRoles.Admin);
+                if (adminUsers.Count <= 1)
+                {
+                    TempData["Error"] = "Sistemde en az bir Admin kalmalıdır.";
+                    return RedirectToAction(nameof(Users));
+                }
+            }
+
+            if (currentRoles.Any())
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                if (!removeResult.Succeeded)
+                {
+                    TempData["Error"] = "Mevcut roller kaldırılırken hata oluştu.";
+                    return RedirectToAction(nameof(Users));
+                }
+            }
+
+            var addResult = await _userManager.AddToRoleAsync(user, role);
+            if (!addResult.Succeeded)
+            {
+                TempData["Error"] = "Yeni rol atanırken hata oluştu.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            TempData["Success"] = $"{user.FullName} kullanıcısının rolü {AppRoles.DisplayName(role)} olarak güncellendi.";
+            return RedirectToAction(nameof(Users));
         }
 
         // GET: /Admin/DailyLogs
@@ -84,36 +195,174 @@ namespace CareerTrack.Controllers
             return View(apps);
         }
 
+        // POST: /Admin/UpdateApplicationStatus
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateApplicationStatus(int id, ApplicationStatus status)
+        {
+            var app = await _context.JobApplications.FindAsync(id);
+            if (app == null) return NotFound();
+
+            app.Status = status;
+            await _context.SaveChangesAsync();
+
+            var statusText = status switch
+            {
+                ApplicationStatus.Pending => "Bekliyor",
+                ApplicationStatus.InReview => "Değerlendirmede",
+                ApplicationStatus.Rejected => "Reddedildi",
+                ApplicationStatus.Offered => "Teklif Gönderildi",
+                _ => status.ToString()
+            };
+
+            TempData["Success"] = $"Başvuru durumu '{statusText}' olarak güncellendi.";
+            return RedirectToAction(nameof(Applications));
+        }
+
         // GET: /Admin/Companies
         public async Task<IActionResult> Companies()
         {
-            var companies = await _context.Companies
-                .Include(c => c.JobApplications)
-                .OrderBy(c => c.Name)
-                .ToListAsync();
-            return View(companies);
+            return View(await BuildCompanyModelAsync());
         }
 
         // POST: /Admin/AddCompany
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddCompany(string name, string sector, string location)
+        public async Task<IActionResult> AddCompany([Bind(Prefix = "Form")] CompanyFormViewModel form)
         {
-            if (string.IsNullOrWhiteSpace(name))
+            ValidateCompanyForm(form, "Form.");
+            if (!ModelState.IsValid)
+                return View(nameof(Companies), await BuildCompanyModelAsync(form));
+
+            var exists = await _context.Companies
+                .AnyAsync(c => c.Name.ToLower() == form.Name.Trim().ToLower());
+            if (exists)
             {
-                TempData["Error"] = "Şirket adı boş olamaz.";
-                return RedirectToAction(nameof(Companies));
+                ModelState.AddModelError("Form.Name", "Bu isimde bir şirket zaten mevcut.");
+                return View(nameof(Companies), await BuildCompanyModelAsync(form));
             }
 
-            _context.Companies.Add(new Models.Entities.Company
+            _context.Companies.Add(new Company
             {
-                Name = name,
-                Sector = sector ?? "Belirtilmedi",
-                Location = location ?? "Belirtilmedi"
+                Name = form.Name.Trim(),
+                Sector = form.Sector.Trim(),
+                Location = form.Location.Trim(),
+                IsApproved = true
             });
             await _context.SaveChangesAsync();
             TempData["Success"] = "Şirket eklendi!";
             return RedirectToAction(nameof(Companies));
+        }
+
+        // POST: /Admin/EditCompany
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCompany(CompanyFormViewModel form)
+        {
+            ValidateCompanyForm(form);
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Şirket bilgileri geçerli değil. Lütfen alanları kontrol edin.";
+                return RedirectToAction(nameof(Companies));
+            }
+
+            var company = await _context.Companies.FindAsync(form.Id);
+            if (company == null) return NotFound();
+
+            var duplicate = await _context.Companies
+                .AnyAsync(c => c.Id != form.Id && c.Name.ToLower() == form.Name.Trim().ToLower());
+            if (duplicate)
+            {
+                TempData["Error"] = "Bu isimde başka bir şirket zaten mevcut.";
+                return RedirectToAction(nameof(Companies));
+            }
+
+            company.Name = form.Name.Trim();
+            company.Sector = form.Sector.Trim();
+            company.Location = form.Location.Trim();
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Şirket güncellendi!";
+            return RedirectToAction(nameof(Companies));
+        }
+
+        // POST: /Admin/DeleteCompany
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCompany(int id)
+        {
+            var company = await _context.Companies
+                .Include(c => c.JobApplications)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (company == null) return NotFound();
+
+            if (company.JobApplications.Any())
+            {
+                TempData["Error"] = "Başvurusu bulunan şirket silinemez.";
+                return RedirectToAction(nameof(Companies));
+            }
+
+            _context.Companies.Remove(company);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Şirket silindi.";
+            return RedirectToAction(nameof(Companies));
+        }
+
+        // POST: /Admin/ApproveCompany/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveCompany(int id, bool approve)
+        {
+            var company = await _context.Companies.FindAsync(id);
+            if (company == null) return NotFound();
+
+            if (approve)
+            {
+                company.IsApproved = true;
+                TempData["Success"] = $"\"{company.Name}\" şirketi onaylandı.";
+            }
+            else
+            {
+                // Başvurusu yoksa sil, varsa sadece reddet
+                var hasApplications = await _context.JobApplications.AnyAsync(a => a.CompanyId == id);
+                if (hasApplications)
+                {
+                    TempData["Error"] = "Bu şirkete bağlı başvurular olduğu için silinemez.";
+                    return RedirectToAction(nameof(Companies));
+                }
+                _context.Companies.Remove(company);
+                TempData["Success"] = $"\"{company.Name}\" şirket önerisi reddedildi ve silindi.";
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Companies));
+        }
+
+        private async Task<CompanyManagementViewModel> BuildCompanyModelAsync(CompanyFormViewModel? form = null)
+        {
+            var companies = await _context.Companies
+                .Include(c => c.JobApplications)
+                .Include(c => c.CreatedBy)
+                .OrderBy(c => c.IsApproved)
+                .ThenBy(c => c.Name)
+                .ToListAsync();
+
+            return new CompanyManagementViewModel
+            {
+                Form = form ?? new CompanyFormViewModel(),
+                Companies = companies
+            };
+        }
+
+        private void ValidateCompanyForm(CompanyFormViewModel form, string keyPrefix = "")
+        {
+            if (string.IsNullOrWhiteSpace(form.Name))
+                ModelState.AddModelError($"{keyPrefix}{nameof(form.Name)}", "Şirket adı boş geçilemez!");
+            if (string.IsNullOrWhiteSpace(form.Sector))
+                ModelState.AddModelError($"{keyPrefix}{nameof(form.Sector)}", "Sektör boş geçilemez!");
+            if (string.IsNullOrWhiteSpace(form.Location))
+                ModelState.AddModelError($"{keyPrefix}{nameof(form.Location)}", "Konum boş geçilemez!");
         }
     }
 }

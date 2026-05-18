@@ -1,4 +1,5 @@
 using CareerTrack.Data;
+using CareerTrack.Models.Constants;
 using CareerTrack.Models.Entities;
 using CareerTrack.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CareerTrack.Controllers
 {
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = AppRoles.Student)]
     public class InterviewController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -69,14 +70,24 @@ namespace CareerTrack.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(InterviewCreateViewModel vm)
         {
-            if (!ModelState.IsValid) return View(vm);
+            var userId = await GetUserIdAsync();
+            var app = await _context.JobApplications
+                .Include(a => a.Company)
+                .FirstOrDefaultAsync(a => a.Id == vm.JobApplicationId && a.StudentId == userId);
+
+            if (app == null) return NotFound();
+
+            vm.CompanyName = app.Company?.Name;
+            vm.Position = app.Position;
 
             // Geçmiş tarih kontrolü
             if (vm.InterviewDate < DateTime.Today)
             {
                 ModelState.AddModelError("InterviewDate", "Mülakat tarihi geçmiş bir tarih olamaz.");
-                return View(vm);
             }
+
+            if (!ModelState.IsValid)
+                return View(vm);
 
             var interview = new Interview
             {
@@ -123,14 +134,24 @@ namespace CareerTrack.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, InterviewCreateViewModel vm)
         {
-            if (!ModelState.IsValid) return View(vm);
-
             var userId = await GetUserIdAsync();
             var interview = await _context.Interviews
                 .Include(i => i.JobApplication)
+                    .ThenInclude(a => a!.Company)
                 .FirstOrDefaultAsync(i => i.Id == id && i.JobApplication!.StudentId == userId);
 
             if (interview == null) return NotFound();
+
+            vm.JobApplicationId = interview.JobApplicationId;
+            vm.CompanyName = interview.JobApplication?.Company?.Name;
+            vm.Position = interview.JobApplication?.Position;
+
+            if (vm.InterviewDate < DateTime.Today)
+            {
+                ModelState.AddModelError(nameof(vm.InterviewDate), "Mülakat tarihi geçmiş bir tarih olamaz.");
+            }
+
+            if (!ModelState.IsValid) return View(vm);
 
             interview.InterviewDate = vm.InterviewDate;
             interview.Stage = vm.Stage;

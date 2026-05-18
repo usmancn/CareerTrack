@@ -1,3 +1,4 @@
+@using CareerTrack.Models.Constants
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<CareerTrack.Models.Entities.ApplicationUser> SignInManager
 @inject UserManager<CareerTrack.Models.Entities.ApplicationUser> UserManager
@@ -24,7 +25,15 @@
 @if (SignInManager.IsSignedIn(User))
 {
     var currentUser = await UserManager.GetUserAsync(User);
-    var isAdmin = User.IsInRole("Admin");
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isSchool = User.IsInRole(AppRoles.School);
+    var isEmployer = User.IsInRole(AppRoles.Employer);
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var userInitial = string.IsNullOrWhiteSpace(currentUser?.FullName)
+        ? "U"
+        : currentUser.FullName.Trim().Substring(0, 1).ToUpper();
+    var roleLabel = isAdmin ? "Admin" : isSchool ? "Okul" : isEmployer ? "İşveren" : "Öğrenci";
     int pendingTodos = ViewBag.PendingTodos ?? 0;
     int upcomingInterviews = ViewBag.UpcomingInterviews ?? 0;
 
@@ -40,11 +49,11 @@
 
             <div class="sidebar-user">
                 <div class="user-avatar">
-                    @(currentUser?.FullName?.Substring(0, 1).ToUpper() ?? "U")
+                    @userInitial
                 </div>
                 <div class="user-info">
                     <div class="user-name">@currentUser?.FullName</div>
-                    <div class="user-role">@(isAdmin ? "Koordinatör" : "Öğrenci")</div>
+                    <div class="user-role">@roleLabel</div>
                 </div>
             </div>
 
@@ -52,52 +61,112 @@
                 @if (isAdmin)
                 {
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                        <a class="nav-link @(currentController == "Admin" && currentAction == "Index" ? "active" : "")"
                            asp-controller="Admin" asp-action="Index">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "DailyLogs" ? "active" : "")"
+                        <a class="nav-link @(currentController == "Admin" && currentAction == "Users" ? "active" : "")"
+                           asp-controller="Admin" asp-action="Users">
+                            <i class="bi bi-person-gear"></i> Kullanıcı Rolleri
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "Admin" && currentAction == "DailyLogs" ? "active" : "")"
                            asp-controller="Admin" asp-action="DailyLogs">
                             <i class="bi bi-journal-check"></i> Staj Günlükleri
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Applications" ? "active" : "")"
+                        <a class="nav-link @(currentController == "Admin" && currentAction == "Applications" ? "active" : "")"
                            asp-controller="Admin" asp-action="Applications">
                             <i class="bi bi-people"></i> Tüm Başvurular
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Companies" ? "active" : "")"
+                        <a class="nav-link @(currentController == "Admin" && currentAction == "Companies" ? "active" : "")"
                            asp-controller="Admin" asp-action="Companies">
                             <i class="bi bi-building"></i> Şirket Yönetimi
+                        </a>
+                    </li>
+                }
+                else if (isSchool)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "School" && currentAction == "Index" ? "active" : "")"
+                           asp-controller="School" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i> Okul Paneli
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "School" && currentAction == "DailyLogs" ? "active" : "")"
+                           asp-controller="School" asp-action="DailyLogs">
+                            <i class="bi bi-journal-check"></i> Günlük Onayları
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "School" && currentAction == "Applications" ? "active" : "")"
+                           asp-controller="School" asp-action="Applications">
+                            <i class="bi bi-briefcase"></i> Başvurular
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "School" && currentAction == "StudentDetail" ? "active" : "")"
+                           asp-controller="School" asp-action="Index" asp-fragment="ogrenci-listesi">
+                            <i class="bi bi-person-lines-fill"></i> Öğrenci Takibi
+                        </a>
+                    </li>
+                }
+                else if (isEmployer)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "Employer" && currentAction == "Index" ? "active" : "")"
+                           asp-controller="Employer" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "Employer" && currentAction == "Postings" ? "active" : "")"
+                           asp-controller="Employer" asp-action="Postings">
+                            <i class="bi bi-megaphone-fill"></i> İlanlarım
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "Employer" && currentAction == "CreatePosting" ? "active" : "")"
+                           asp-controller="Employer" asp-action="CreatePosting">
+                            <i class="bi bi-plus-circle-fill"></i> Yeni İlan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "Employer" && currentAction == "Applications" ? "active" : "")"
+                           asp-controller="Employer" asp-action="Applications">
+                            <i class="bi bi-people-fill"></i> Başvurular
                         </a>
                     </li>
                 }
                 else
                 {
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")"
+                        <a class="nav-link @(currentController == "Dashboard" ? "active" : "")"
                            asp-controller="Dashboard" asp-action="Index">
                             <i class="bi bi-house-fill"></i> Ana Sayfa
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Application" ? "active" : "")"
+                        <a class="nav-link @(currentController == "Application" ? "active" : "")"
                            asp-controller="Application" asp-action="Index">
                             <i class="bi bi-send-fill"></i> Başvurularım
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "DailyLog" ? "active" : "")"
+                        <a class="nav-link @(currentController == "DailyLog" ? "active" : "")"
                            asp-controller="DailyLog" asp-action="Index">
                             <i class="bi bi-journal-text"></i> Staj Defteri
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ToDo" ? "active" : "")"
+                        <a class="nav-link @(currentController == "ToDo" ? "active" : "")"
                            asp-controller="ToDo" asp-action="Index">
                             <i class="bi bi-check2-circle"></i> Görev Listem
                             @if (pendingTodos > 0)
@@ -113,7 +182,7 @@
                 <form asp-controller="Account" asp-action="Logout" method="post">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="btn-logout">
-                        <i class="bi bi-box-arrow-left"></i> Çıkış Yap
+                        <i class="bi bi-box-arrow-left"></i> <span>Çıkış Yap</span>
                     </button>
                 </form>
             </div>
@@ -123,12 +192,12 @@
         <div class="main-content">
             <!-- Header -->
             <header class="top-header">
-                <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
+                <button class="sidebar-toggle" type="button" data-sidebar-toggle>
                     <i class="bi bi-list"></i>
                 </button>
                 <div class="header-title">@ViewData["Title"]</div>
                 <div class="header-actions">
-                    @if (!isAdmin && upcomingInterviews > 0)
+                    @if (!isAdmin && !isSchool && !isEmployer && upcomingInterviews > 0)
                     {
                         <span class="header-badge">
                             <i class="bi bi-calendar-event"></i>

@@ -14,6 +14,7 @@ namespace CareerTrack.Data
         public DbSet<Offer> Offers { get; set; }
         public DbSet<DailyLog> DailyLogs { get; set; }
         public DbSet<ToDo> ToDos { get; set; }
+        public DbSet<JobPosting> JobPostings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -60,6 +61,38 @@ namespace CareerTrack.Data
                 .WithMany(u => u.ToDos)
                 .HasForeignKey(t => t.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ── Yeni İlişkiler ─────────────────────────────────
+
+            // ApplicationUser → Company (İşveren bağlantısı, opsiyonel)
+            builder.Entity<ApplicationUser>()
+                .HasOne(u => u.Company)
+                .WithMany()
+                .HasForeignKey(u => u.CompanyId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // Company → CreatedBy (Öğrenci tarafından önerilen şirket)
+            builder.Entity<Company>()
+                .HasOne(c => c.CreatedBy)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // JobPosting → Employer (N-1)
+            builder.Entity<JobPosting>()
+                .HasOne(jp => jp.Employer)
+                .WithMany(u => u.JobPostings)
+                .HasForeignKey(jp => jp.EmployerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // JobPosting → Company (N-1)
+            builder.Entity<JobPosting>()
+                .HasOne(jp => jp.Company)
+                .WithMany(c => c.JobPostings)
+                .HasForeignKey(jp => jp.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
