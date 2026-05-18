@@ -1,0 +1,55 @@
+@model List<CareerTrack.Models.Entities.Company>
+@{
+    ViewData["Title"] = "Şirket Yönetimi";
+}
+
+<div class="row g-4">
+    <!-- Şirket Ekleme Formu -->
+    <div class="col-lg-4">
+        <div class="form-card">
+            <div class="form-card-header"><i class="bi bi-building-add me-2"></i>Şirket Ekle</div>
+            <div class="form-card-body">
+                <form asp-action="AddCompany" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Şirket Adı *</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Örn: TechCorp A.Ş." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sektör</label>
+                        <input type="text" name="sector" class="form-control" placeholder="Yazılım, Finans..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Konum</label>
+                        <input type="text" name="location" class="form-control" placeholder="İstanbul, Ankara..." />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-circle me-1"></i> Ekle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Şirket Listesi -->
+    <div class="col-lg-8">
+        <div class="table-card">
+            <table class="table align-middle">
+                <thead>
+                    <tr><th>Şirket Adı</th><th>Sektör</th><th>Konum</th><th>Başvuru</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model)
+                    {
+                        <tr>
+                            <td><strong>@c.Name</strong></td>
+                            <td>@c.Sector</td>
+                            <td><i class="bi bi-geo-alt me-1"></i>@c.Location</td>
+                            <td><span class="badge bg-primary">@c.JobApplications.Count</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

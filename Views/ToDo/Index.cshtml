@@ -1,0 +1,105 @@
+@model List<CareerTrack.Models.Entities.ToDo>
+@{
+    ViewData["Title"] = "Görev Listem";
+    var pending = Model.Where(t => !t.IsCompleted).ToList();
+    var completed = Model.Where(t => t.IsCompleted).ToList();
+}
+
+<div class="row g-4">
+    <!-- Yeni Görev Formu -->
+    <div class="col-lg-4">
+        <div class="form-card">
+            <div class="form-card-header">
+                <i class="bi bi-plus-circle me-2"></i>Yeni Görev
+            </div>
+            <div class="form-card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Görev</label>
+                        <input type="text" name="taskTitle" class="form-control"
+                               placeholder="Örn: SQL çalış, İngilizce tekrar et" required minlength="3" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bitiş Tarihi</label>
+                        <input type="date" name="dueDate" class="form-control"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus me-1"></i> Ekle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bekleyen ve Tamamlanan Görevler -->
+    <div class="col-lg-8">
+        <!-- Bekleyen -->
+        <div class="card-section mb-4">
+            <div class="section-header">
+                <span><i class="bi bi-circle me-2"></i>Bekleyen Görevler
+                    <span class="badge bg-danger ms-2">@pending.Count</span>
+                </span>
+            </div>
+            @if (!pending.Any())
+            {
+                <div class="empty-state"><i class="bi bi-check-all"></i><p>Harika! Bekleyen görev yok 🎉</p></div>
+            }
+            @foreach (var todo in pending)
+            {
+                <div class="todo-list-item @(todo.DueDate < DateTime.Today ? "overdue" : "")">
+                    <form asp-action="Toggle" asp-route-id="@todo.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-toggle" title="Tamamlandı olarak işaretle">
+                            <i class="bi bi-circle"></i>
+                        </button>
+                    </form>
+                    <div class="todo-text">
+                        <span>@todo.TaskTitle</span>
+                        <small class="@(todo.DueDate < DateTime.Today ? "text-danger" : "text-muted")">
+                            <i class="bi bi-calendar3 me-1"></i>@todo.DueDate.ToString("dd MMM yyyy")
+                            @if (todo.DueDate < DateTime.Today) { <span class="ms-1">⚠ Süresi geçti!</span> }
+                        </small>
+                    </div>
+                    <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-delete" onclick="return confirm('Görevi sil?')">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+
+        <!-- Tamamlanan -->
+        @if (completed.Any())
+        {
+            <div class="card-section">
+                <div class="section-header">
+                    <span><i class="bi bi-check-circle me-2"></i>Tamamlanan
+                        <span class="badge bg-success ms-2">@completed.Count</span>
+                    </span>
+                </div>
+                @foreach (var todo in completed)
+                {
+                    <div class="todo-list-item completed">
+                        <form asp-action="Toggle" asp-route-id="@todo.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-toggle-done"><i class="bi bi-check-circle-fill"></i></button>
+                        </form>
+                        <div class="todo-text">
+                            <span class="text-decoration-line-through text-muted">@todo.TaskTitle</span>
+                        </div>
+                        <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-delete" onclick="return confirm('Görevi sil?')">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

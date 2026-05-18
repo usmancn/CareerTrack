@@ -1,0 +1,52 @@
+@model List<CareerTrack.Models.Entities.JobApplication>
+@{
+    ViewData["Title"] = "Tüm Başvurular";
+}
+
+<div class="table-card">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Öğrenci</th>
+                <th>Şirket</th>
+                <th>Pozisyon</th>
+                <th>Tarih</th>
+                <th>Staj Türü</th>
+                <th>Durum</th>
+                <th>Mülakatlar</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var app in Model)
+            {
+                <tr>
+                    <td><strong>@app.Student?.FullName</strong></td>
+                    <td>@app.Company?.Name</td>
+                    <td>@app.Position</td>
+                    <td>@app.ApplicationDate.ToString("dd.MM.yyyy")</td>
+                    <td>
+                        <span class="badge bg-secondary">
+                            @(app.InternshipType switch {
+                                InternshipType.Voluntary => "Gönüllü",
+                                InternshipType.MandatoryShort => "Zorunlu Kısa",
+                                InternshipType.LongTerm => "70 Gün",
+                                _ => app.InternshipType.ToString()
+                            })
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-@app.Status.ToString().ToLower()">
+                            @(app.Status switch {
+                                ApplicationStatus.Offered => "Teklif ✓",
+                                ApplicationStatus.InReview => "İncelemede",
+                                ApplicationStatus.Rejected => "Reddedildi",
+                                _ => "Bekliyor"
+                            })
+                        </span>
+                    </td>
+                    <td><span class="badge bg-info text-dark">@app.Interviews.Count aşama</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

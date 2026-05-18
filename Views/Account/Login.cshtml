@@ -1,0 +1,60 @@
+@model CareerTrack.Models.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Giriş Yap";
+    Layout = "_Layout";
+}
+
+<div class="auth-card">
+    <div class="auth-card-header">
+        <h2>Giriş Yap</h2>
+        <p>Hesabınıza erişmek için bilgilerinizi girin</p>
+    </div>
+    <div class="auth-card-body">
+        <form asp-action="Login" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input asp-for="Email" class="form-control" placeholder="ornek@email.com" autocomplete="username" />
+                </div>
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input asp-for="Password" class="form-control" placeholder="••••••" autocomplete="current-password" />
+                </div>
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4 form-check">
+                <input asp-for="RememberMe" class="form-check-input" />
+                <label asp-for="RememberMe" class="form-check-label">Beni hatırla</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-auth">Giriş Yap</button>
+        </form>
+
+        <div class="auth-divider">
+            <span>Hesabın yok mu?</span>
+        </div>
+        <a asp-action="Register" class="btn btn-outline-primary w-100">Kayıt Ol</a>
+
+        <div class="demo-accounts mt-3">
+            <small class="text-muted">
+                <strong>Demo:</strong> admin@careertrack.com / Admin123!
+            </small>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScripts" />
+}

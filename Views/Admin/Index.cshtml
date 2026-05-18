@@ -1,0 +1,97 @@
+@model CareerTrack.Models.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<!-- İstatistik Kartları -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-blue">
+            <div class="stat-icon"><i class="bi bi-people"></i></div>
+            <div class="stat-value">@Model.TotalStudents</div>
+            <div class="stat-label">Toplam Öğrenci</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-orange">
+            <div class="stat-icon"><i class="bi bi-send"></i></div>
+            <div class="stat-value">@Model.TotalApplications</div>
+            <div class="stat-label">Toplam Başvuru</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-green">
+            <div class="stat-icon"><i class="bi bi-trophy"></i></div>
+            <div class="stat-value">@Model.TotalOffered</div>
+            <div class="stat-label">Teklif Alınan</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-red">
+            <div class="stat-icon"><i class="bi bi-journal-x"></i></div>
+            <div class="stat-value">@Model.PendingDailyLogs</div>
+            <div class="stat-label">Onay Bekleyen Günlük</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Son Günlükler -->
+    <div class="col-lg-6">
+        <div class="card-section">
+            <div class="section-header">
+                <span><i class="bi bi-journal-check me-2"></i>Son Staj Günlükleri</span>
+                <a asp-action="DailyLogs" class="see-all">Tümünü Gör</a>
+            </div>
+            @if (!Model.RecentDailyLogs.Any())
+            {
+                <div class="empty-state"><i class="bi bi-inbox"></i><p>Henüz günlük yok</p></div>
+            }
+            @foreach (var log in Model.RecentDailyLogs.Take(5))
+            {
+                <div class="list-item">
+                    <div class="list-item-icon">
+                        <i class="bi bi-journal-text"></i>
+                    </div>
+                    <div class="list-item-body">
+                        <div class="list-item-title">@log.Student?.FullName — @log.DayNumber. Gün</div>
+                        <div class="list-item-sub">@log.LogDate.ToString("dd.MM.yyyy")</div>
+                    </div>
+                    <span class="badge @(log.IsApprovedByAdmin ? "bg-success" : "bg-warning text-dark")">
+                        @(log.IsApprovedByAdmin ? "Onaylandı" : "Bekliyor")
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Son Başvurular -->
+    <div class="col-lg-6">
+        <div class="card-section">
+            <div class="section-header">
+                <span><i class="bi bi-send me-2"></i>Son Başvurular</span>
+                <a asp-action="Applications" class="see-all">Tümünü Gör</a>
+            </div>
+            @foreach (var app in Model.RecentApplications)
+            {
+                <div class="list-item">
+                    <div class="list-item-icon interview-icon">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div class="list-item-body">
+                        <div class="list-item-title">@app.Student?.FullName</div>
+                        <div class="list-item-sub">@app.Company?.Name — @app.Position</div>
+                    </div>
+                    <span class="status-badge status-@app.Status.ToString().ToLower()">
+                        @(app.Status switch {
+                            ApplicationStatus.Offered => "Teklif ✓",
+                            ApplicationStatus.InReview => "İncelemede",
+                            ApplicationStatus.Rejected => "Reddedildi",
+                            _ => "Bekliyor"
+                        })
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+</div>

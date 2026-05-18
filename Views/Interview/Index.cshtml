@@ -1,0 +1,73 @@
+@model List<CareerTrack.Models.Entities.Interview>
+@{
+    ViewData["Title"] = "Mülakat Aşamaları";
+    var app = ViewBag.Application as CareerTrack.Models.Entities.JobApplication;
+}
+
+<div class="page-toolbar">
+    <div>
+        <span class="text-muted">@app?.Company?.Name — </span><strong>@app?.Position</strong>
+    </div>
+    <a asp-action="Create" asp-route-applicationId="@app?.Id" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Mülakat Ekle
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state-full">
+        <i class="bi bi-mic-mute"></i>
+        <h5>Henüz mülakat aşaması eklenmedi</h5>
+        <a asp-action="Create" asp-route-applicationId="@app?.Id" class="btn btn-primary mt-2">İlk Mülakatı Ekle</a>
+    </div>
+}
+else
+{
+    <div class="timeline">
+        @foreach (var iv in Model)
+        {
+            <div class="timeline-item">
+                <div class="timeline-dot @(iv.ResultStatus == InterviewResult.Passed ? "dot-green" : iv.ResultStatus == InterviewResult.Failed ? "dot-red" : "dot-yellow")"></div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <span class="timeline-title">@(iv.Stage switch {
+                            InterviewStage.AptitudeTest => "Genel Yetenek Testi",
+                            InterviewStage.LanguageTest => "Yabancı Dil Sınavı",
+                            InterviewStage.HRInterview => "İK Mülakatı",
+                            InterviewStage.TechnicalInterview => "Teknik Mülakat",
+                            _ => iv.Stage.ToString()
+                        })</span>
+                        <div class="timeline-actions">
+                            <span class="badge @(iv.ResultStatus == InterviewResult.Passed ? "bg-success" : iv.ResultStatus == InterviewResult.Failed ? "bg-danger" : "bg-warning text-dark") me-2">
+                                @(iv.ResultStatus switch {
+                                    InterviewResult.Passed => "Geçti ✓",
+                                    InterviewResult.Failed => "Kaldı",
+                                    _ => "Bekleniyor"
+                                })
+                            </span>
+                            <a asp-action="Edit" asp-route-id="@iv.Id" class="btn btn-sm btn-outline-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@iv.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Bu mülakatı silmek istediğinizden emin misiniz?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="timeline-date">
+                        <i class="bi bi-calendar3 me-1"></i>@iv.InterviewDate.ToString("dd MMMM yyyy")
+                    </div>
+                    @if (!string.IsNullOrEmpty(iv.Notes))
+                    {
+                        <p class="timeline-notes">@iv.Notes</p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<a asp-controller="Application" asp-action="Index" class="btn btn-outline-secondary mt-3">
+    <i class="bi bi-arrow-left me-1"></i> Başvurulara Dön
+</a>

@@ -1,0 +1,46 @@
+## .NET Core / ASP.NET Core
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.db
+*.db-shm
+*.db-wal
+
+## EF Core Migrations geçici dosyalar
+*.mdf
+*.ldf
+
+## User Secrets
+/*/Properties/launchSettings.json
+
+## Build Outputs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+
+## NuGet
+*.nupkg
+.nuget/
+packages/
+nuget.config
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Logs
+*.log
+
+## Publish output
+/publish
+
+## Test
+TestResults/

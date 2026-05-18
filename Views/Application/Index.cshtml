@@ -1,0 +1,89 @@
+@model List<CareerTrack.Models.Entities.JobApplication>
+@{
+    ViewData["Title"] = "Başvurularım";
+}
+
+<div class="page-toolbar">
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Yeni Başvuru
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state-full">
+        <i class="bi bi-send-slash"></i>
+        <h5>Henüz başvuru eklemediniz</h5>
+        <a asp-action="Create" class="btn btn-primary mt-2">İlk Başvuruyu Ekle</a>
+    </div>
+}
+else
+{
+    <div class="table-card">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Şirket</th>
+                    <th>Pozisyon</th>
+                    <th>Başvuru Tarihi</th>
+                    <th>Staj Türü</th>
+                    <th>Durum</th>
+                    <th>Mülakatlar</th>
+                    <th class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var app in Model)
+                {
+                    <tr>
+                        <td><strong>@app.Company?.Name</strong></td>
+                        <td>@app.Position</td>
+                        <td>@app.ApplicationDate.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                @(app.InternshipType switch {
+                                    InternshipType.Voluntary => "Gönüllü",
+                                    InternshipType.MandatoryShort => "Zorunlu Kısa",
+                                    InternshipType.LongTerm => "70 Gün",
+                                    _ => app.InternshipType.ToString()
+                                })
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-@app.Status.ToString().ToLower()">
+                                @(app.Status switch {
+                                    ApplicationStatus.Pending => "Bekliyor",
+                                    ApplicationStatus.InReview => "İncelemede",
+                                    ApplicationStatus.Offered => "Teklif ✓",
+                                    ApplicationStatus.Rejected => "Reddedildi",
+                                    _ => app.Status.ToString()
+                                })
+                            </span>
+                        </td>
+                        <td>
+                            <a asp-controller="Interview" asp-action="Index" asp-route-applicationId="@app.Id"
+                               class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-mic me-1"></i>@app.Interviews.Count Mülakat
+                            </a>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@app.Id" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@app.Id" class="btn btn-sm btn-outline-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@app.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Bu başvuruyu silmek istediğinizden emin misiniz?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

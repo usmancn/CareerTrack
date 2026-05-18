@@ -1,0 +1,65 @@
+@model CareerTrack.Models.ViewModels.ApplicationCreateViewModel
+@{
+    ViewData["Title"] = "Başvuruyu Düzenle";
+}
+
+<div class="form-card">
+    <div class="form-card-header">
+        <i class="bi bi-pencil-fill me-2"></i>Başvuruyu Düzenle
+    </div>
+    <div class="form-card-body">
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="CompanyId" class="form-label"></label>
+                    <select asp-for="CompanyId" asp-items="Model.Companies" class="form-select">
+                        <option value="">-- Şirket Seçiniz --</option>
+                    </select>
+                    <span asp-validation-for="CompanyId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Position" class="form-label"></label>
+                    <input asp-for="Position" class="form-control" placeholder="Örn: Backend Developer Stajyeri" />
+                    <span asp-validation-for="Position" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="ApplicationDate" class="form-label"></label>
+                    <input asp-for="ApplicationDate" class="form-control" type="date" />
+                    <span asp-validation-for="ApplicationDate" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="InternshipType" class="form-label"></label>
+                    <select asp-for="InternshipType" class="form-select"
+                            asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.InternshipType>()">
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="Status" class="form-label"></label>
+                    <select asp-for="Status" class="form-select"
+                            asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.ApplicationStatus>()">
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-save me-1"></i> Güncelle
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">İptal</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScripts" />
+}
