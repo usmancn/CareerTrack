@@ -74,44 +74,8 @@
             <div class="row g-3">
                 @foreach (var posting in Model.OpenPostings)
                 {
-                    var days = (int)(posting.EndDate - posting.StartDate).TotalDays;
-                    var desc = posting.Description.Length > 120 ? posting.Description[..120] + "…" : posting.Description;
                     <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 border-0 shadow-sm posting-card">
-                            <div class="card-body d-flex flex-column">
-                                <div class="d-flex align-items-start mb-3">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3 flex-shrink-0"
-                                         style="width:44px;height:44px;">
-                                        <i class="bi bi-building text-primary fs-5"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="fw-bold mb-0">@posting.Title</h6>
-                                        <small class="text-muted">@posting.Company?.Name</small>
-                                    </div>
-                                </div>
-                                <div class="d-flex flex-wrap gap-1 mb-3">
-                                    <span class="badge bg-light text-dark border" style="font-size:10px;">
-                                        <i class="bi bi-calendar2-range me-1"></i>@posting.StartDate.ToString("dd.MM") – @posting.EndDate.ToString("dd.MM.yy")
-                                    </span>
-                                    <span class="badge bg-light text-dark border" style="font-size:10px;">
-                                        <i class="bi bi-clock me-1"></i>@days gün
-                                    </span>
-                                    <span class="badge bg-light text-dark border" style="font-size:10px;">
-                                        <i class="bi bi-people me-1"></i>@posting.Quota kişi
-                                    </span>
-                                </div>
-                                <p class="text-muted small flex-grow-1 mb-3">@desc</p>
-                                <button class="btn btn-primary btn-sm w-100"
-                                        data-bs-toggle="modal" data-bs-target="#applyModal"
-                                        data-postingid="@posting.Id"
-                                        data-title="@posting.Title"
-                                        data-company="@posting.Company?.Name"
-                                        data-start="@posting.StartDate.ToString("dd.MM.yyyy")"
-                                        data-end="@posting.EndDate.ToString("dd.MM.yyyy")">
-                                    <i class="bi bi-send me-1"></i>Başvur
-                                </button>
-                            </div>
-                        </div>
+                        <partial name="_PostingCardPartial" model="posting" />
                     </div>
                 }
             </div>
@@ -274,11 +238,7 @@
                                         else
                                         {
                                             <button class="btn btn-primary stage-action-btn w-100"
-                                                    data-bs-toggle="modal" data-bs-target="#stageModal"
-                                                    data-appid="@app.Id"
-                                                    data-stage="@app.Status.ToString()"
-                                                    data-label="@actionLabel"
-                                                    data-company="@app.Company?.Name">
+                                                    onclick="openStageDrawer(@app.Id, '@app.Status.ToString()', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(actionLabel ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Company?.Name ?? ""))', '@actionIcon')">
                                                 <i class="bi @actionIcon me-1"></i>@actionLabel
                                             </button>
                                         }
@@ -315,35 +275,36 @@
     </div>
 </div>
 
-<!-- ══ Başvur Modal ══ -->
-<div class="modal fade" id="applyModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 bg-primary text-white rounded-top-4">
-                <h5 class="modal-title"><i class="bi bi-send me-2"></i>Staj Başvurusu</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
+<!-- ══ BAŞVUR DRAWER ══ -->
+<div id="applyDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('applyDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-send me-2 text-primary"></i>Staj Başvurusu</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('applyDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
             <form asp-action="ApplyToPosting" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="postingId" id="applyPostingId" />
-                <div class="modal-body px-4 pt-4">
-                    <div class="text-center mb-4">
-                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width:60px;height:60px;">
-                            <i class="bi bi-building text-primary fs-3"></i>
-                        </div>
-                        <h6 class="fw-bold mb-1" id="applyCompanyName"></h6>
-                        <p class="text-muted mb-0" id="applyJobTitle"></p>
-                        <small class="text-muted" id="applyDates"></small>
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width:60px;height:60px;">
+                        <i class="bi bi-building text-primary fs-3"></i>
                     </div>
-                    <div class="alert alert-info border-0 rounded-3 py-2">
-                        <i class="bi bi-info-circle me-1"></i>
-                        <small>Başvurunuz işverene iletilecek. İşveren sizi süreçlere dahil edebilir.</small>
-                    </div>
+                    <h5 class="fw-bold mb-1 text-white" id="applyCompanyName"></h5>
+                    <p class="text-muted mb-1" id="applyJobTitle"></p>
+                    <small class="text-muted d-block" id="applyDates"></small>
                 </div>
-                <div class="modal-footer border-0 px-4 pb-4 gap-2">
-                    <button type="button" class="btn btn-light rounded-3 flex-fill" data-bs-dismiss="modal">Vazgeç</button>
-                    <button type="submit" class="btn btn-primary rounded-3 flex-fill">
+                <div class="alert alert-info py-3 mb-4" style="background: rgba(13, 202, 240, 0.05); border: 1px solid rgba(13, 202, 240, 0.15);">
+                    <i class="bi bi-info-circle me-1 text-info"></i>
+                    <small class="text-secondary">Başvurunuz işverene iletilecek. İşveren sizi süreçlere dahil edebilir.</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('applyDrawer')">Vazgeç</button>
+                    <button type="submit" class="btn btn-primary flex-fill">
                         <i class="bi bi-send me-1"></i>Başvur
                     </button>
                 </div>
@@ -352,30 +313,32 @@
     </div>
 </div>
 
-<!-- ══ Sınava/Mülakata Gir Modal ══ -->
-<div class="modal fade" id="stageModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 text-white rounded-top-4"
-                 style="background:linear-gradient(135deg,#4f46e5,#0ea5e9);">
-                <h5 class="modal-title" id="stageModalTitle"></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<!-- ══ SINAV/MÜLAKAT DRAWER ══ -->
+<div id="stageDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('stageDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title" id="stageDrawerTitle"><i class="bi bi-play-circle me-2 text-primary"></i>Aşama Tamamlama</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('stageDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <div class="text-center mb-4">
+                <div id="stageDrawerIcon" class="mb-3" style="font-size:3.5rem;"></div>
+                <h5 class="fw-bold mb-1 text-white" id="stageDrawerCompany"></h5>
+                <p class="text-secondary" id="stageDrawerDesc"></p>
             </div>
-            <div class="modal-body text-center px-4 pt-4 pb-2">
-                <div id="stageModalIcon" class="mb-3" style="font-size:3.5rem;"></div>
-                <h6 class="fw-bold mb-1" id="stageModalCompany"></h6>
-                <p class="text-muted" id="stageModalDesc"></p>
-                <div class="alert alert-warning border-0 rounded-3 py-2 text-start small">
-                    <i class="bi bi-lightbulb me-1"></i>
-                    Bu bir simülasyondur. "Tamamladım" butonuna basarak bu aşamanın üzerinize atanan görevini kapatabilirsiniz.
-                </div>
+            <div class="alert alert-warning py-3 mb-4" style="background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(255, 193, 7, 0.2);">
+                <i class="bi bi-lightbulb me-1 text-warning"></i>
+                <small class="text-secondary">Bu bir staj süreci aşamasıdır. Görevi tamamladıysanız "Tamamladım" butonuna basarak işverenin onaylamasını sağlayabilirsiniz.</small>
             </div>
-            <div class="modal-footer border-0 px-4 pb-4 gap-2">
-                <button type="button" class="btn btn-light rounded-3 flex-fill" data-bs-dismiss="modal">Şimdi Değil</button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('stageDrawer')">Şimdi Değil</button>
                 <form asp-controller="Application" asp-action="MarkStageComplete" method="post" class="flex-fill">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" id="stageAppId" />
-                    <button type="submit" class="btn btn-primary rounded-3 w-100">
+                    <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-check-circle me-1"></i>Tamamladım ✓
                     </button>
                 </form>
@@ -386,40 +349,30 @@
 
 @section Scripts {
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Başvur Modal
-    var applyModal = document.getElementById('applyModal');
-    if (applyModal) {
-        applyModal.addEventListener('show.bs.modal', function (e) {
-            var btn = e.relatedTarget;
-            document.getElementById('applyPostingId').value = btn.dataset.postingid;
-            document.getElementById('applyCompanyName').textContent = btn.dataset.company;
-            document.getElementById('applyJobTitle').textContent = btn.dataset.title;
-            document.getElementById('applyDates').textContent = btn.dataset.start + ' — ' + btn.dataset.end;
-        });
+    function openApplyDrawer(postingId, companyName, jobTitle, start, end) {
+        document.getElementById('applyPostingId').value = postingId;
+        document.getElementById('applyCompanyName').textContent = companyName;
+        document.getElementById('applyJobTitle').textContent = jobTitle;
+        document.getElementById('applyDates').textContent = start + ' — ' + end;
+        window.openPremiumDrawer('applyDrawer');
     }
 
-    // Sınav/Mülakat Modal
-    var stageModal = document.getElementById('stageModal');
-    if (stageModal) {
-        stageModal.addEventListener('show.bs.modal', function (e) {
-            var btn = e.relatedTarget;
-            var stage = btn.dataset.stage;
-            document.getElementById('stageAppId').value = btn.dataset.appid;
-            document.getElementById('stageModalTitle').textContent = btn.dataset.label;
-            document.getElementById('stageModalCompany').textContent = btn.dataset.company;
+    function openStageDrawer(appId, stage, label, companyName, icon) {
+        document.getElementById('stageAppId').value = appId;
+        document.getElementById('stageDrawerTitle').innerHTML = '<i class="bi ' + (icon || 'bi-play-circle') + ' me-2 text-primary"></i>' + label;
+        document.getElementById('stageDrawerCompany').textContent = companyName;
 
-            var icons = { PreScreening:'📋', AptitudeTest:'🧠', LanguageTest:'🗣️', Interview:'🎙️' };
-            var descs = {
-                PreScreening: 'Ön eleme formunu incelediniz mi? İşveren sizinle iletişime geçecektir.',
-                AptitudeTest: 'Genel yetenek testi sürecinizi tamamladıysanız işaretleyin.',
-                LanguageTest: 'İngilizce sınavı sürecinizi tamamladıysanız işaretleyin.',
-                Interview:    'Mülakat randevunuza katıldıysanız tamamlandı olarak işaretleyin.'
-            };
-            document.getElementById('stageModalIcon').textContent = icons[stage] || '📌';
-            document.getElementById('stageModalDesc').textContent = descs[stage] || btn.dataset.label;
-        });
+        const icons = { PreScreening:'📋', AptitudeTest:'🧠', LanguageTest:'🗣️', Interview:'🎙️' };
+        const descs = {
+            PreScreening: 'Ön eleme formunu incelediniz mi? İşveren sizinle iletişime geçecektir.',
+            AptitudeTest: 'Genel yetenek testi sürecinizi tamamladıysanız işaretleyin.',
+            LanguageTest: 'İngilizce sınavı sürecinizi tamamladıysanız işaretleyin.',
+            Interview:    'Mülakat randevunuza katıldıysanız tamamlandı olarak işaretleyin.'
+        };
+        document.getElementById('stageDrawerIcon').textContent = icons[stage] || '📌';
+        document.getElementById('stageDrawerDesc').textContent = descs[stage] || label;
+        
+        window.openPremiumDrawer('stageDrawer');
     }
-});
 </script>
 }

@@ -1,0 +1,36 @@
+@model CareerTrack.Models.Entities.JobPosting
+
+@{
+    var days = (int)(Model.EndDate - Model.StartDate).TotalDays;
+    var desc = Model.Description?.Length > 120 ? Model.Description[..120] + "…" : Model.Description;
+}
+<div class="card h-100 border-0 shadow-sm posting-card">
+    <div class="card-body d-flex flex-column">
+        <div class="d-flex align-items-start mb-3">
+            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3 flex-shrink-0"
+                 style="width:44px;height:44px;">
+                <i class="bi bi-building text-primary fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0">@Model.Title</h6>
+                <small class="text-muted">@Model.Company?.Name</small>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mb-3">
+            <span class="badge bg-light text-dark border" style="font-size:10px;">
+                <i class="bi bi-calendar2-range me-1"></i>@Model.StartDate.ToString("dd.MM") – @Model.EndDate.ToString("dd.MM.yy")
+            </span>
+            <span class="badge bg-light text-dark border" style="font-size:10px;">
+                <i class="bi bi-clock me-1"></i>@days gün
+            </span>
+            <span class="badge bg-light text-dark border" style="font-size:10px;">
+                <i class="bi bi-people me-1"></i>@Model.Quota kişi
+            </span>
+        </div>
+        <p class="text-muted small flex-grow-1 mb-3">@desc</p>
+        <button class="btn btn-primary btn-sm w-100"
+                onclick="openApplyDrawer(@Model.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.Company?.Name ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.Title ?? ""))', '@Model.StartDate.ToString("dd.MM.yyyy")', '@Model.EndDate.ToString("dd.MM.yyyy")')">
+            <i class="bi bi-send me-1"></i>Başvur
+        </button>
+    </div>
+</div>

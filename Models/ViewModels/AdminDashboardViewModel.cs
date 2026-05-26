@@ -24,5 +24,8 @@ namespace CareerTrack.Models.ViewModels
         public List<DailyLog> RecentDailyLogs { get; set; } = new();
         public List<JobApplication> RecentApplications { get; set; } = new();
         public List<Company> PendingCompanyList { get; set; } = new();
+
+        // LINQ GroupBy Stats
+        public Dictionary<string, int> ApplicationStatusStats { get; set; } = new();
     }
 }

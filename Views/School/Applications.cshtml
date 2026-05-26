@@ -69,80 +69,14 @@ else
                              app.Status == ApplicationStatus.SchoolPending)
                         {
                             <div class="d-flex flex-column gap-2">
-                                <button type="button" class="btn btn-success btn-sm w-100" data-bs-toggle="modal" data-bs-target="#approveModal-@app.Id">
+                                <button type="button" class="btn btn-success btn-sm w-100" 
+                                        onclick="openApproveDrawer(@app.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Company?.Name ?? ""))')">
                                     <i class="bi bi-check-circle me-1"></i>Stajı Onayla
                                 </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#rejectModal-@app.Id">
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100" 
+                                        onclick="openRejectDrawer(@app.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Company?.Name ?? ""))')">
                                     <i class="bi bi-x-circle me-1"></i>Reddet
                                 </button>
-                            </div>
-
-                            <!-- Onay Modal -->
-                            <div class="modal fade" id="approveModal-@app.Id" tabindex="-1" aria-labelledby="approveModalLabel-@app.Id" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header border-0 pb-0">
-                                            <h5 class="modal-title fw-bold" id="approveModalLabel-@app.Id">
-                                                <i class="bi bi-check-circle-fill text-success me-2"></i>Stajı Onayla
-                                            </h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
-                                        </div>
-                                        <form asp-action="ApproveApplication" method="post">
-                                            <div class="modal-body">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@app.Id" />
-                                                <input type="hidden" name="approve" value="true" />
-                                                
-                                                <p class="text-muted small mb-3">
-                                                    <strong>@app.Student?.FullName</strong> adlı öğrencinin <strong>@app.Company?.Name</strong> şirketindeki stajını onaylıyorsunuz.
-                                                </p>
-
-                                                <label class="form-label fw-bold">Okul Onay Notu (Opsiyonel)</label>
-                                                <textarea name="schoolNote" class="form-control" rows="3" placeholder="Öğrenciye veya işverene iletmek istediğiniz not (örn: Staj defteri yönergelerine dikkat ediniz)..."></textarea>
-                                            </div>
-                                            <div class="modal-footer border-0 pt-0">
-                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                                                <button type="submit" class="btn btn-success">
-                                                    <i class="bi bi-check-lg me-1"></i>Onayla ve Başlat
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Ret Modal -->
-                            <div class="modal fade" id="rejectModal-@app.Id" tabindex="-1" aria-labelledby="rejectModalLabel-@app.Id" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header border-0 pb-0">
-                                            <h5 class="modal-title fw-bold" id="rejectModalLabel-@app.Id">
-                                                <i class="bi bi-x-circle-fill text-danger me-2"></i>Stajı Reddet / Revize İste
-                                            </h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
-                                        </div>
-                                        <form asp-action="ApproveApplication" method="post">
-                                            <div class="modal-body">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@app.Id" />
-                                                <input type="hidden" name="approve" value="false" />
-                                                
-                                                <p class="text-muted small mb-3">
-                                                    Staj şartları okul yönergelerine uymuyorsa stajı reddedebilir veya revize isteyebilirsiniz.
-                                                </p>
-
-                                                <label class="form-label fw-bold text-danger">Ret / Revize Gerekçesi (Zorunlu)</label>
-                                                <textarea name="schoolNote" class="form-control" rows="3" placeholder="Lütfen neden reddettiğinizi yazın (örn: Staj tarihleri akademik takvimle uyuşmuyor)..." required></textarea>
-                                            </div>
-                                            <div class="modal-footer border-0 pt-0">
-                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                                                <button type="submit" class="btn btn-danger">
-                                                    <i class="bi bi-x-lg me-1"></i>Reddet
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
                             </div>
                         }
                         else
@@ -154,8 +88,8 @@ else
                                 </span>
                                 @if (!string.IsNullOrEmpty(app.SchoolNote))
                                 {
-                                    <div class="text-muted small mt-1 bg-light p-2 rounded border-start border-3 @(app.Status == ApplicationStatus.SchoolApproved ? "border-success" : "border-danger")">
-                                        <i class="bi bi-chat-left-text me-1"></i> @app.SchoolNote
+                                    <div class="text-muted small mt-1 bg-dark bg-opacity-30 p-2 rounded border-start border-3 @(app.Status == ApplicationStatus.SchoolApproved ? "border-success" : "border-danger")">
+                                        <i class="bi bi-chat-left-text me-1 text-primary"></i> @app.SchoolNote
                                     </div>
                                 }
                             </div>
@@ -165,4 +99,98 @@ else
             </div>
         </div>
     }
+}
+
+<!-- ══ STAJ ONAYLA YAN PANELİ ══ -->
+<div id="approveDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('approveDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-check-circle-fill text-success me-2"></i>Stajı Onayla</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('approveDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <form asp-action="ApproveApplication" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="approveAppId" />
+                <input type="hidden" name="approve" value="true" />
+                
+                <div class="mb-4">
+                    <p class="text-secondary small">
+                        <strong id="approveStudentName" class="text-white"></strong> adlı öğrencinin <strong id="approveCompanyName" class="text-white"></strong> şirketindeki stajını onaylıyorsunuz.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Okul Onay Notu (Opsiyonel)</label>
+                    <textarea name="schoolNote" class="form-control glass-input" rows="4" placeholder="Öğrenciye veya işverene iletmek istediğiniz not (örn: Staj defteri yönergelerine dikkat ediniz)..."></textarea>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('approveDrawer')">İptal</button>
+                    <button type="submit" class="btn btn-success flex-fill text-dark fw-bold">
+                        <i class="bi bi-check-lg me-1"></i>Onayla ve Başlat
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══ STAJ REDDET / REVİZE İSTE YAN PANELİ ══ -->
+<div id="rejectDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('rejectDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title text-danger"><i class="bi bi-x-circle-fill text-danger me-2"></i>Stajı Reddet / Revize İste</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('rejectDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <form asp-action="ApproveApplication" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="rejectAppId" />
+                <input type="hidden" name="approve" value="false" />
+                
+                <div class="mb-4">
+                    <p class="text-secondary small">
+                        <strong id="rejectStudentName" class="text-white"></strong> adlı öğrencinin <strong id="rejectCompanyName" class="text-white"></strong> şirketindeki stajını staj şartları okul yönergelerine uymuyorsa reddedebilir veya revize isteyebilirsiniz.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-danger">Ret / Revize Gerekçesi (Zorunlu)</label>
+                    <textarea name="schoolNote" class="form-control glass-input border-danger" rows="4" placeholder="Lütfen neden reddettiğinizi yazın (örn: Staj tarihleri akademik takvimle uyuşmuyor)..." required></textarea>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('rejectDrawer')">İptal</button>
+                    <button type="submit" class="btn btn-danger flex-fill">
+                        <i class="bi bi-x-lg me-1"></i>Reddet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openApproveDrawer(appId, studentName, companyName) {
+            document.getElementById('approveAppId').value = appId;
+            document.getElementById('approveStudentName').textContent = studentName;
+            document.getElementById('approveCompanyName').textContent = companyName;
+            window.openPremiumDrawer('approveDrawer');
+        }
+
+        function openRejectDrawer(appId, studentName, companyName) {
+            document.getElementById('rejectAppId').value = appId;
+            document.getElementById('rejectStudentName').textContent = studentName;
+            document.getElementById('rejectCompanyName').textContent = companyName;
+            window.openPremiumDrawer('rejectDrawer');
+        }
+    </script>
 }

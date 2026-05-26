@@ -1,0 +1,14 @@
+@model CareerTrack.ViewComponents.SidebarStatsViewModel
+
+@if (Model.Count > 0)
+{
+    <div class="mt-auto mx-3 p-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px;">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="small text-muted"><i class="bi @Model.Icon me-1"></i> @Model.Label</span>
+            <span class="badge @Model.BadgeClass rounded-pill">@Model.Count</span>
+        </div>
+        <div class="progress" style="height: 3px; background: rgba(255,255,255,0.05);">
+            <div class="progress-bar @Model.BadgeClass" style="width: 100%;"></div>
+        </div>
+    </div>
+}

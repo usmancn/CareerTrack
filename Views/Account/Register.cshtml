@@ -3,109 +3,196 @@
     ViewData["Title"] = "Kayıt Ol";
 }
 
-<div class="auth-card">
-    <div class="auth-card-header">
-        <h2>Hesap Oluştur</h2>
-        <p>Staj sürecini takip etmeye başla</p>
-    </div>
-    <div class="auth-card-body">
-        <form asp-action="Register" method="post">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<!-- Ultra-Modern Minimal Auth Layout -->
+<div class="auth-modern-container">
+    <div class="auth-particles" id="authParticles"></div>
+    
+    <div class="auth-modern-card" style="max-height: 95vh; overflow-y: auto;">
+        <div class="auth-modern-header">
+            <div class="logo-wrapper">
+                <i class="bi bi-person-plus-fill glow-icon"></i>
+            </div>
+            <h2>Aramıza Katılın</h2>
+            <p>Kariyerinizde yeni bir sayfa açmak için ilk adımı atın.</p>
+        </div>
 
-            
-            <div class="mb-4">
-                <label class="form-label fw-semibold">Hesap Türü</label>
+        <form asp-action="Register" method="post" id="registerForm" class="premium-form">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <!-- Role Selection -->
+            <div class="form-group mb-4">
+                <label class="form-label">Hesap Türü</label>
                 <div class="d-flex gap-3">
                     <div class="flex-fill">
                         <input type="radio" class="btn-check" name="Role" id="roleStudent" value="Student" checked autocomplete="off" />
-                        <label class="btn btn-outline-primary w-100" for="roleStudent">
-                            <i class="bi bi-mortarboard-fill me-2"></i>Öğrenci
+                        <label class="btn-secondary-premium w-100 text-center d-flex align-items-center justify-content-center gap-2" for="roleStudent">
+                            <i class="bi bi-mortarboard-fill"></i> Öğrenci
                         </label>
                     </div>
                     <div class="flex-fill">
                         <input type="radio" class="btn-check" name="Role" id="roleEmployer" value="Employer" autocomplete="off" />
-                        <label class="btn btn-outline-success w-100" for="roleEmployer">
-                            <i class="bi bi-building-fill me-2"></i>İşveren
+                        <label class="btn-secondary-premium w-100 text-center d-flex align-items-center justify-content-center gap-2" for="roleEmployer">
+                            <i class="bi bi-building-fill"></i> İşveren
                         </label>
                     </div>
                 </div>
-                <span asp-validation-for="Role" class="text-danger small"></span>
+                <span asp-validation-for="Role" class="text-danger small mt-1 d-block"></span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="FullName" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-person"></i></span>
-                    <input asp-for="FullName" class="form-control" placeholder="Ad Soyad" />
+            <div class="form-group mb-4">
+                <label asp-for="FullName" class="form-label">Ad Soyad</label>
+                <div class="input-glass-wrapper">
+                    <i class="bi bi-person input-icon"></i>
+                    <input asp-for="FullName" class="glass-input-premium" placeholder="Ad Soyad" />
                 </div>
-                <span asp-validation-for="FullName" class="text-danger small"></span>
+                <span asp-validation-for="FullName" class="text-danger small mt-1 d-block"></span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                    <input asp-for="Email" class="form-control" placeholder="ornek@email.com" />
+            <div class="form-group mb-4">
+                <label asp-for="Email" class="form-label">E-posta Adresi</label>
+                <div class="input-glass-wrapper">
+                    <i class="bi bi-envelope input-icon"></i>
+                    <input asp-for="Email" class="glass-input-premium" placeholder="ornek@email.com" />
                 </div>
-                <span asp-validation-for="Email" class="text-danger small"></span>
+                <span asp-validation-for="Email" class="text-danger small mt-1 d-block"></span>
             </div>
 
-            <div class="mb-3" id="departmentField">
-                <label asp-for="Department" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
-                    <input asp-for="Department" class="form-control" placeholder="Bilgisayar Mühendisliği" />
+            <div class="form-group mb-4" id="departmentField">
+                <label asp-for="Department" class="form-label">Bölüm / Departman</label>
+                <div class="input-glass-wrapper">
+                    <i class="bi bi-mortarboard input-icon"></i>
+                    <input asp-for="Department" class="glass-input-premium" placeholder="Bilgisayar Mühendisliği" />
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                    <input asp-for="Password" class="form-control" placeholder="En az 6 karakter" />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-4">
+                        <label asp-for="Password" class="form-label">Şifre</label>
+                        <div class="input-glass-wrapper">
+                            <i class="bi bi-lock input-icon"></i>
+                            <input asp-for="Password" class="glass-input-premium" placeholder="En az 6" type="password" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small mt-1 d-block"></span>
+                    </div>
                 </div>
-                <span asp-validation-for="Password" class="text-danger small"></span>
+                <div class="col-md-6">
+                    <div class="form-group mb-4">
+                        <label asp-for="ConfirmPassword" class="form-label">Şifre Tekrar</label>
+                        <div class="input-glass-wrapper">
+                            <i class="bi bi-shield-lock input-icon"></i>
+                            <input asp-for="ConfirmPassword" class="glass-input-premium" placeholder="Tekrar girin" type="password" />
+                        </div>
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-4">
-                <label asp-for="ConfirmPassword" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                    <input asp-for="ConfirmPassword" class="form-control" placeholder="Şifreyi tekrar girin" />
-                </div>
-                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
-            </div>
-
-            <div id="employerNote" class="alert alert-info d-none py-2 small">
-                <i class="bi bi-info-circle me-1"></i>
+            <div id="employerNote" class="alert alert-info d-none py-2 small" style="background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.3); color: var(--text-primary);">
+                <i class="bi bi-info-circle me-1 text-info"></i>
                 İşveren hesabınız oluşturulduktan sonra profilinizden şirket bilgilerinizi tamamlayabilirsiniz.
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 btn-auth">Kayıt Ol</button>
+            <button type="submit" class="btn-premium-submit w-100 mb-4 mt-2">
+                <span>Kayıt Ol</span>
+                <i class="bi bi-person-plus-fill"></i>
+            </button>
         </form>
-
-        <div class="auth-divider"><span>Zaten hesabın var mı?</span></div>
-        <a asp-action="Login" class="btn btn-outline-primary w-100">Giriş Yap</a>
+        
+        <div class="form-footer mt-4 text-center">
+            <p class="text-muted">Zaten hesabınız var mı? <a asp-action="Login" class="text-primary-glow fw-bold">Giriş Yap</a></p>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScripts" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script>
         const radios = document.querySelectorAll('input[name="Role"]');
         const employerNote = document.getElementById('employerNote');
         const deptField = document.getElementById('departmentField');
 
         radios.forEach(r => r.addEventListener('change', function () {
+            // Animasyonlu geçiş
+            anime({
+                targets: deptField,
+                opacity: [0, 1],
+                translateX: [10, 0],
+                duration: 400,
+                easing: 'easeOutQuad'
+            });
+
             if (this.value === 'Employer') {
                 employerNote.classList.remove('d-none');
                 deptField.querySelector('input').placeholder = 'İnsan Kaynakları / İK';
+                deptField.querySelector('label').innerText = 'Departman';
+                deptField.querySelector('i').classList.replace('bi-mortarboard', 'bi-briefcase');
             } else {
                 employerNote.classList.add('d-none');
                 deptField.querySelector('input').placeholder = 'Bilgisayar Mühendisliği';
+                deptField.querySelector('label').innerText = 'Bölüm';
+                deptField.querySelector('i').classList.replace('bi-briefcase', 'bi-mortarboard');
+            }
+            
+            // Etiket stilini güncelle
+            document.querySelectorAll('label[for^="role"]').forEach(lbl => {
+                lbl.classList.replace('btn-primary', 'btn-secondary-premium');
+                lbl.classList.replace('btn-success', 'btn-secondary-premium');
+                lbl.style.background = '';
+                lbl.style.color = '';
+            });
+            
+            const selectedLabel = document.querySelector(`label[for="${this.id}"]`);
+            if(this.value === 'Student') {
+                selectedLabel.classList.replace('btn-secondary-premium', 'btn-primary');
+            } else {
+                selectedLabel.classList.replace('btn-secondary-premium', 'btn-success');
             }
         }));
+        
+        // Initial set style for default checked
+        document.querySelector('label[for="roleStudent"]').classList.replace('btn-secondary-premium', 'btn-primary');
+
+        // Background Particles & Staggering
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animating main card
+            anime({
+                targets: '.auth-modern-card',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                duration: 800,
+                easing: 'easeOutExpo'
+            });
+
+            // Particles
+            const container = document.getElementById('authParticles');
+            const particleCount = 15;
+            
+            for(let i=0; i<particleCount; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle-glow');
+                const size = Math.random() * 300 + 100;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}%`;
+                p.style.top = `${Math.random() * 100}%`;
+                container.appendChild(p);
+            }
+            
+            anime({
+                targets: '.particle-glow',
+                translateX: () => anime.random(-150, 150),
+                translateY: () => anime.random(-150, 150),
+                scale: () => anime.random(0.8, 1.2),
+                opacity: () => anime.random(0.1, 0.4),
+                duration: () => anime.random(6000, 12000),
+                direction: 'alternate',
+                loop: true,
+                easing: 'easeInOutSine'
+            });
+        });
     </script>
 }
 

@@ -53,11 +53,11 @@
                     </td>
                     <td class="text-end">
                         <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                            <button class="btn btn-sm btn-primary dropdown-toggle" type="button"
                                     data-bs-toggle="dropdown">
                                 Durum Güncelle
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end p-3" style="min-width: 250px;">
+                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end p-3 shadow-lg" style="min-width: 250px; background-color: var(--card-bg); border: 1px solid rgba(255,255,255,0.1);">
                                 <li>
                                     <form asp-action="UpdateApplicationStatus" method="post">
                                         @Html.AntiForgeryToken()

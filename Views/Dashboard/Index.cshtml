@@ -3,152 +3,194 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<!-- Karşılama Banner -->
-<div class="welcome-banner">
-    <div>
-        <h1 class="welcome-title">Merhaba, @Model.StudentName 👋</h1>
-        <p class="welcome-sub">@(Model.Department ?? "Staj sürecini buradan yönet")</p>
+<div class="stagger-container">
+    <!-- Karşılama Banner -->
+    <div class="welcome-banner stagger-item">
+        <div>
+            <h1 class="welcome-title">Merhaba, @Model.StudentName 👋</h1>
+            <p class="welcome-sub">@(Model.Department ?? "Staj sürecini buradan yönet")</p>
+        </div>
+        <a asp-controller="Application" asp-action="Create" class="btn btn-primary btn-add-main">
+            <i class="bi bi-plus-circle-fill me-1"></i> Yeni Başvuru
+        </a>
     </div>
-    <a asp-controller="Application" asp-action="Create" class="btn btn-primary btn-add-main">
-        <i class="bi bi-plus-circle-fill me-1"></i> Yeni Başvuru
-    </a>
-</div>
 
-<!-- İstatistik Kartları -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-blue">
-            <div class="stat-icon"><i class="bi bi-send"></i></div>
-            <div class="stat-value">@Model.TotalApplications</div>
-            <div class="stat-label">Toplam Başvuru</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-orange">
-            <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
-            <div class="stat-value">@Model.InReviewCount</div>
-            <div class="stat-label">Değerlendirmede</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-green">
-            <div class="stat-icon"><i class="bi bi-trophy"></i></div>
-            <div class="stat-value">@Model.OfferedCount</div>
-            <div class="stat-label">Teklif Alındı</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-red">
-            <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
-            <div class="stat-value">@Model.RejectedCount</div>
-            <div class="stat-label">Reddedildi</div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <!-- Aktif Başvurular -->
-    <div class="col-lg-6">
-        <div class="card-section">
-            <div class="section-header">
-                <span><i class="bi bi-briefcase-fill me-2"></i>Aktif Başvurular</span>
-                <a asp-controller="Application" asp-action="Index" class="see-all">Tümünü Gör</a>
+    <!-- İstatistik Kartları -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3 stagger-item">
+            <div class="stat-card stat-blue h-100">
+                <div class="stat-icon"><i class="bi bi-send"></i></div>
+                <div class="stat-value count-anim">@Model.TotalApplications</div>
+                <div class="stat-label">Toplam Başvuru</div>
             </div>
-            @if (!Model.ActiveApplications.Any())
-            {
-                <div class="empty-state">
-                    <i class="bi bi-inbox"></i>
-                    <p>Henüz başvuru yok</p>
-                    <a asp-controller="Application" asp-action="Create" class="btn btn-sm btn-primary">İlk Başvuruyu Ekle</a>
+        </div>
+        <div class="col-6 col-md-3 stagger-item">
+            <div class="stat-card stat-orange h-100">
+                <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+                <div class="stat-value count-anim">@Model.InReviewCount</div>
+                <div class="stat-label">Değerlendirmede</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 stagger-item">
+            <div class="stat-card stat-green h-100">
+                <div class="stat-icon"><i class="bi bi-trophy"></i></div>
+                <div class="stat-value count-anim">@Model.OfferedCount</div>
+                <div class="stat-label">Teklif Alındı</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 stagger-item">
+            <div class="stat-card stat-red h-100">
+                <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+                <div class="stat-value count-anim">@Model.RejectedCount</div>
+                <div class="stat-label">Reddedildi</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Aktif Başvurular -->
+        <div class="col-lg-6 stagger-item">
+            <div class="card-section h-100">
+                <div class="section-header">
+                    <span><i class="bi bi-briefcase-fill me-2 text-primary-light"></i>Aktif Başvurular</span>
+                    <a asp-controller="Application" asp-action="Index" class="see-all">Tümünü Gör</a>
                 </div>
-            }
-            else
-            {
-                @foreach (var app in Model.ActiveApplications.Take(5))
+                @if (!Model.ActiveApplications.Any())
                 {
-                    <div class="list-item">
-                        <div class="list-item-icon">
-                            <i class="bi bi-building"></i>
-                        </div>
-                        <div class="list-item-body">
-                            <div class="list-item-title">@app.Company?.Name</div>
-                            <div class="list-item-sub">@app.Position</div>
-                        </div>
-                        <span class="status-badge status-@app.Status.ToString().ToLower()">
-                            @(app.Status switch {
-                                ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
-                                ApplicationStatus.SchoolRevision => "Revize İstendi",
-                                ApplicationStatus.SchoolApproved => "Okul Onaylı",
-                                ApplicationStatus.PreScreening => "Ön Eleme",
-                                ApplicationStatus.AptitudeTest => "Test",
-                                ApplicationStatus.LanguageTest => "Dil Sınavı",
-                                ApplicationStatus.Interview => "Mülakat",
-                                ApplicationStatus.EmployerAccepted => "Kabul Edildi",
-                                ApplicationStatus.Rejected => "Reddedildi",
-                                ApplicationStatus.Completed => "Tamamlandı",
-                                _ => app.Status.ToString()
-                            })
-                        </span>
+                    <div class="empty-state py-5 text-center">
+                        <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                        <p class="text-secondary">Henüz başvuru yok</p>
+                        <a asp-controller="Application" asp-action="Create" class="btn btn-sm btn-outline-primary mt-2">İlk Başvuruyu Ekle</a>
                     </div>
                 }
-            }
-        </div>
-    </div>
-
-    <!-- Staj Görevleri ve Aşamalar -->
-    <div class="col-lg-6">
-        <div class="card-section">
-            <div class="section-header">
-                <span><i class="bi bi-list-check me-2"></i>Bekleyen İşlemler ve Görevler</span>
-            </div>
-            @if (!Model.UpcomingTasks.Any() && !Model.IncompleteToDos.Any())
-            {
-                <div class="empty-state">
-                    <i class="bi bi-check-all"></i>
-                    <p>Harika! Bekleyen hiçbir işlem veya göreviniz yok.</p>
-                </div>
-            }
-            else
-            {
-                <!-- Staj Aşamaları (Sınav, Mülakat vb.) -->
-                @foreach (var todo in Model.IncompleteToDos.OrderBy(t => t.DueDate))
+                else
                 {
-                    <div class="list-item">
-                        <div class="list-item-icon bg-warning bg-opacity-10 text-warning">
-                            <i class="bi bi-clock-history"></i>
-                        </div>
-                        <div class="list-item-body">
-                            <div class="list-item-title">Aşama Beklentisi</div>
-                            <div class="list-item-sub">@todo.TaskTitle</div>
-                        </div>
-                        <div class="interview-date">
-                            <i class="bi bi-calendar3"></i>
-                            @todo.DueDate.ToString("dd MMM yyyy")
-                        </div>
-                    </div>
-                }
-
-                <!-- İşveren Tarafından Atanan Görevler -->
-                @foreach (var task in Model.UpcomingTasks)
-                {
-                    <div class="list-item">
-                        <div class="list-item-icon interview-icon">
-                            <i class="bi bi-briefcase"></i>
-                        </div>
-                        <div class="list-item-body">
-                            <div class="list-item-title">@task.JobApplication?.Company?.Name - Staj Görevi</div>
-                            <div class="list-item-sub">@task.Title</div>
-                        </div>
-                        @if (task.DueDate.HasValue)
+                    <div class="list-container">
+                        @foreach (var app in Model.ActiveApplications.Take(5))
                         {
-                            <div class="interview-date">
-                                <i class="bi bi-calendar-check"></i>
-                                @task.DueDate.Value.ToString("dd MMM yyyy")
+                            <div class="list-item">
+                                <div class="list-item-icon">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div class="list-item-body">
+                                    <div class="list-item-title">@app.Company?.Name</div>
+                                    <div class="list-item-sub">@app.Position</div>
+                                </div>
+                                <span class="status-badge status-@app.Status.ToString().ToLower()">
+                                    @(app.Status switch {
+                                        ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                                        ApplicationStatus.SchoolRevision => "Revize İstendi",
+                                        ApplicationStatus.SchoolApproved => "Okul Onaylı",
+                                        ApplicationStatus.PreScreening => "Ön Eleme",
+                                        ApplicationStatus.AptitudeTest => "Test",
+                                        ApplicationStatus.LanguageTest => "Dil Sınavı",
+                                        ApplicationStatus.Interview => "Mülakat",
+                                        ApplicationStatus.EmployerAccepted => "Kabul Edildi",
+                                        ApplicationStatus.Rejected => "Reddedildi",
+                                        ApplicationStatus.Completed => "Tamamlandı",
+                                        _ => app.Status.ToString()
+                                    })
+                                </span>
                             </div>
                         }
                     </div>
                 }
-            }
+            </div>
+        </div>
+
+        <!-- Staj Görevleri ve Aşamalar -->
+        <div class="col-lg-6 stagger-item">
+            <div class="card-section h-100">
+                <div class="section-header">
+                    <span><i class="bi bi-list-check me-2 text-success"></i>Bekleyen İşlemler ve Görevler</span>
+                </div>
+                @if (!Model.UpcomingTasks.Any() && !Model.IncompleteToDos.Any())
+                {
+                    <div class="empty-state py-5 text-center">
+                        <i class="bi bi-check-all display-4 text-success mb-3 opacity-50"></i>
+                        <p class="text-secondary">Harika! Bekleyen hiçbir işlem veya göreviniz yok.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="list-container">
+                        <!-- Staj Aşamaları (Sınav, Mülakat vb.) -->
+                        @foreach (var todo in Model.IncompleteToDos.OrderBy(t => t.DueDate))
+                        {
+                            <div class="list-item">
+                                <div class="list-item-icon bg-warning bg-opacity-10 text-warning border-warning border-opacity-25">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                                <div class="list-item-body">
+                                    <div class="list-item-title">Aşama Beklentisi</div>
+                                    <div class="list-item-sub">@todo.TaskTitle</div>
+                                </div>
+                                <div class="interview-date">
+                                    <i class="bi bi-calendar3"></i>
+                                    @todo.DueDate.ToString("dd MMM yyyy")
+                                </div>
+                            </div>
+                        }
+
+                        <!-- İşveren Tarafından Atanan Görevler -->
+                        @foreach (var task in Model.UpcomingTasks)
+                        {
+                            <div class="list-item">
+                                <div class="list-item-icon interview-icon">
+                                    <i class="bi bi-briefcase"></i>
+                                </div>
+                                <div class="list-item-body">
+                                    <div class="list-item-title text-truncate" style="max-width:200px;" title="@task.JobApplication?.Company?.Name">
+                                        @task.JobApplication?.Company?.Name
+                                    </div>
+                                    <div class="list-item-sub">@task.Title</div>
+                                </div>
+                                @if (task.DueDate.HasValue)
+                                {
+                                    <div class="interview-date bg-primary bg-opacity-10 text-primary border-primary border-opacity-25">
+                                        <i class="bi bi-calendar-check"></i>
+                                        @task.DueDate.Value.ToString("dd MMM")
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Dashboard Stagger Animation
+            anime({
+                targets: '.stagger-item',
+                translateY: [40, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(100, {start: 100}),
+                easing: 'easeOutExpo',
+                duration: 800
+            });
+            
+            // Number Counter Animation
+            const counters = document.querySelectorAll('.count-anim');
+            counters.forEach(counter => {
+                const targetValue = parseInt(counter.innerText, 10);
+                if(!isNaN(targetValue) && targetValue > 0) {
+                    counter.innerText = '0';
+                    anime({
+                        targets: counter,
+                        innerHTML: [0, targetValue],
+                        round: 1,
+                        easing: 'easeOutExpo',
+                        duration: 1500,
+                        delay: 400
+                    });
+                }
+            });
+        });
+    </script>
+}

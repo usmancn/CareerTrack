@@ -58,10 +58,14 @@ namespace CareerTrack.Controllers
                     .ToListAsync(),
 
                 PendingCompanyList = await _context.Companies
-                    .Include(c => c.CreatedBy)
                     .Where(c => !c.IsApproved)
                     .OrderBy(c => c.Name)
-                    .ToListAsync()
+                    .ToListAsync(),
+
+                ApplicationStatusStats = await _context.JobApplications
+                    .GroupBy(a => a.Status)
+                    .Select(g => new { Status = g.Key.ToString(), Count = g.Count() })
+                    .ToDictionaryAsync(k => k.Status, v => v.Count)
             };
 
             return View(vm);

@@ -57,10 +57,8 @@
                                     }
                                 </td>
                                 <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                            data-bs-target="#logModal" data-id="@log.Id"
-                                            data-content="@log.Content" data-note="@log.EmployerNote"
-                                            data-status="@log.Status.ToString()">
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="openReviewDrawer(@log.Id, `@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(log.Content))`, `@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(log.EmployerNote ?? ""))`, '@log.Status.ToString()')">
                                         <i class="bi bi-eye me-1"></i>İncele
                                     </button>
                                 </td>
@@ -80,34 +78,38 @@
     </div>
 </div>
 
-<!-- Log İnceleme Modalı -->
-<div class="modal fade" id="logModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
+<!-- Log İnceleme Yan Paneli -->
+<div id="logReviewDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('logReviewDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-journal-text me-2 text-primary"></i>Günlük İnceleme</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('logReviewDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
             <form asp-action="ApproveLog" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="modalLogId" />
-                <div class="modal-header border-bottom-0 bg-light">
-                    <h5 class="modal-title"><i class="bi bi-journal-text me-2"></i>Günlük İnceleme</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold">ÖĞRENCİNİN GİRDİĞİ İÇERİK</label>
+                    <div class="p-3 rounded glass-panel" id="modalLogContent" style="min-height: 120px; white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);"></div>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ÖĞRENCİNİN GİRDİĞİ İÇERİK</label>
-                        <div class="p-3 bg-light rounded" id="modalLogContent" style="min-height: 100px; white-space: pre-wrap;"></div>
-                    </div>
-                    
-                    <div id="actionArea">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">İşveren Notu (Opsiyonel / Revize için zorunlu)</label>
-                            <textarea name="employerNote" id="modalEmployerNote" class="form-control" rows="3" placeholder="Öğrenciye iletmek istediğiniz notlar..."></textarea>
-                        </div>
-                    </div>
+                
+                <div id="actionArea" class="mb-4">
+                    <label class="form-label fw-bold">İşveren Notu (Opsiyonel / Revize için zorunlu)</label>
+                    <textarea name="employerNote" id="modalEmployerNote" class="form-control glass-input" rows="4" placeholder="Öğrenciye iletmek istediğiniz notlar..."></textarea>
                 </div>
-                <div class="modal-footer border-top-0 bg-light" id="modalFooter">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-                    <button type="submit" name="approve" value="false" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Reddet / Revize İste</button>
-                    <button type="submit" name="approve" value="true" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>Onayla</button>
+                
+                <div class="d-flex gap-2" id="modalFooter">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('logReviewDrawer')">Kapat</button>
+                    <button type="submit" name="approve" value="false" class="btn btn-danger flex-fill"><i class="bi bi-x-circle me-1"></i>Reddet / Revize</button>
+                    <button type="submit" name="approve" value="true" class="btn btn-success flex-fill text-dark fw-bold"><i class="bi bi-check-circle me-1"></i>Onayla</button>
+                </div>
+                <div class="d-flex gap-2 d-none" id="viewOnlyFooter">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="closePremiumDrawer('logReviewDrawer')">Kapat</button>
                 </div>
             </form>
         </div>
@@ -116,35 +118,36 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var logModal = document.getElementById('logModal');
-            logModal.addEventListener('show.bs.modal', function (event) {
-                var button = event.relatedTarget;
-                var id = button.getAttribute('data-id');
-                var content = button.getAttribute('data-content');
-                var note = button.getAttribute('data-note');
-                var status = button.getAttribute('data-status');
+        function openReviewDrawer(id, content, note, status) {
+            document.getElementById('modalLogId').value = id;
+            document.getElementById('modalLogContent').textContent = content;
+            document.getElementById('modalEmployerNote').value = note || '';
 
-                logModal.querySelector('#modalLogId').value = id;
-                logModal.querySelector('#modalLogContent').textContent = content;
-                logModal.querySelector('#modalEmployerNote').value = note || '';
+            const actionArea = document.getElementById('actionArea');
+            const footer = document.getElementById('modalFooter');
+            const viewOnlyFooter = document.getElementById('viewOnlyFooter');
+            const noteTextarea = document.getElementById('modalEmployerNote');
 
-                var actionArea = logModal.querySelector('#actionArea');
-                var footer = logModal.querySelector('#modalFooter');
-
-                if (status === 'SentToEmployer') {
-                    actionArea.style.display = 'block';
-                    footer.style.display = 'flex';
-                    logModal.querySelector('#modalEmployerNote').readOnly = false;
+            if (status === 'SentToEmployer') {
+                actionArea.classList.remove('d-none');
+                footer.classList.remove('d-none');
+                footer.classList.add('d-flex');
+                viewOnlyFooter.classList.add('d-none');
+                noteTextarea.readOnly = false;
+            } else {
+                noteTextarea.readOnly = true;
+                if (!note || note.trim() === '') {
+                    actionArea.classList.add('d-none');
                 } else {
-                    // Sadece görüntüleme
-                    logModal.querySelector('#modalEmployerNote').readOnly = true;
-                    if (!note) {
-                        actionArea.style.display = 'none';
-                    }
-                    footer.style.display = 'none';
+                    actionArea.classList.remove('d-none');
                 }
-            });
-        });
+                footer.classList.add('d-none');
+                footer.classList.remove('d-flex');
+                viewOnlyFooter.classList.remove('d-none');
+                viewOnlyFooter.classList.add('d-flex');
+            }
+
+            window.openPremiumDrawer('logReviewDrawer');
+        }
     </script>
 }

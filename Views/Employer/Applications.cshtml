@@ -93,19 +93,15 @@
                             @if (canUpdate)
                             {
                                 <div class="d-flex gap-1 justify-content-end flex-wrap">
-                                    <button class="btn btn-sm btn-outline-primary" title="Mevcut Aşamayı Değerlendir"
-                                            data-bs-toggle="modal" data-bs-target="#evaluateModal"
-                                            data-appid="@app.Id"
-                                            data-student="@app.Student?.FullName"
-                                            data-statustext="@statusText">
-                                        <i class="bi bi-clipboard-check"></i> Değerlendir
-                                    </button>
+                                    @if (!isStudentPending)
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary" title="Mevcut Aşamayı Değerlendir"
+                                                onclick="openEvaluateDrawer(@app.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(statusText))')">
+                                            <i class="bi bi-clipboard-check"></i> Değerlendir
+                                        </button>
+                                    }
                                     <button class="btn btn-sm btn-outline-secondary" title="Sonraki Aşamaya Taşı"
-                                            data-bs-toggle="modal" data-bs-target="#updateStageModal"
-                                            data-appid="@app.Id"
-                                            data-status="@((int)app.Status)"
-                                            data-student="@app.Student?.FullName"
-                                            data-statustext="@statusText">
+                                            onclick="openUpdateStageDrawer(@app.Id, @((int)app.Status), '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(statusText))')">
                                         <i class="bi bi-arrow-right-circle"></i> Aşama
                                     </button>
                                 </div>
@@ -137,48 +133,54 @@ else
 }
 
 
-<!-- Mevcut Aşamayı Değerlendirme Modalı -->
-<div class="modal fade" id="evaluateModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
+<!-- Mevcut Aşamayı Değerlendirme Yan Paneli -->
+<div id="evaluateDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('evaluateDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-clipboard-data me-2 text-primary"></i>Öğrenciyi Değerlendir</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('evaluateDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
             <form asp-action="EvaluateApplication" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="evAppId" />
-                <div class="modal-header border-bottom-0 bg-light">
-                    <h5 class="modal-title"><i class="bi bi-clipboard-data me-2 text-primary"></i>Öğrenciyi Değerlendir</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                
+                <div class="mb-4">
+                    <p class="text-muted small mb-1">Öğrenci: <strong id="evStudentName" class="text-white"></strong></p>
+                    <p class="text-muted small mb-0">Değerlendirilen Aşama: <span id="evStageText" class="badge bg-primary"></span></p>
                 </div>
-                <div class="modal-body">
-                    <p class="text-muted small mb-1">Öğrenci: <strong id="evStudentName" class="text-dark"></strong></p>
-                    <p class="text-muted small mb-3">Değerlendirilen Aşama: <span id="evStageText" class="badge bg-primary"></span></p>
-                    
-                    <div class="alert alert-info py-2 small">
-                        <i class="bi bi-info-circle me-1"></i>Bu alanda sadece <strong>mevcut aşamanın</strong> (Sınav, Mülakat vb.) değerlendirme notlarını girersiniz. Öğrenciyi sonraki aşamaya taşımak için "Aşama" butonunu kullanın.
-                    </div>
+                
+                <div class="alert alert-info py-2 small mb-4" style="background: rgba(13, 202, 240, 0.05); border: 1px solid rgba(13, 202, 240, 0.15);">
+                    <i class="bi bi-info-circle me-1 text-info"></i>
+                    <span class="text-secondary">Bu alanda sadece <strong>mevcut aşamanın</strong> (Sınav, Mülakat vb.) değerlendirme notlarını girersiniz. Öğrenciyi sonraki aşamaya taşımak için "Aşama" butonunu kullanın.</span>
+                </div>
 
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <label class="form-label fw-bold">Sınav / Aşama Sonucu</label>
-                            <select name="evaluationResult" class="form-select">
-                                <option value="">Belirtme</option>
-                                <option value="Başarılı (Geçti)">Başarılı (Geçti)</option>
-                                <option value="Başarısız (Kaldı)">Başarısız (Kaldı)</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label fw-bold">Puan (100 üzerinden)</label>
-                            <input type="number" name="score" class="form-control" min="0" max="100" placeholder="Örn: 85" />
-                        </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Sınav / Aşama Sonucu</label>
+                        <select name="evaluationResult" class="form-select glass-input">
+                            <option value="">Belirtme</option>
+                            <option value="Başarılı (Geçti)">Başarılı (Geçti)</option>
+                            <option value="Başarısız (Kaldı)">Başarısız (Kaldı)</option>
+                        </select>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Değerlendirme Notu (Opsiyonel)</label>
-                        <input type="text" name="employerNote" class="form-control" placeholder="Örn: Mülakatta teknik bilgisi çok iyiydi." />
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Puan (100 üzerinden)</label>
+                        <input type="number" name="score" class="form-control glass-input" min="0" max="100" placeholder="Örn: 85" />
                     </div>
                 </div>
-                <div class="modal-footer border-top-0 bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-primary">
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Değerlendirme Notu (Opsiyonel)</label>
+                    <textarea name="employerNote" class="form-control glass-input" rows="3" placeholder="Örn: Mülakatta teknik bilgisi çok iyiydi."></textarea>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('evaluateDrawer')">İptal</button>
+                    <button type="submit" class="btn btn-primary flex-fill">
                         <i class="bi bi-check-circle me-1"></i>Değerlendirmeyi Kaydet
                     </button>
                 </div>
@@ -187,45 +189,50 @@ else
     </div>
 </div>
 
-<!-- Sonraki Aşamaya Taşı Modalı -->
-<div class="modal fade" id="updateStageModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
+<!-- Sonraki Aşamaya Taşı Yan Paneli -->
+<div id="updateStageDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('updateStageDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-arrow-right-circle me-2 text-success"></i>Aşama İlerlet</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('updateStageDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
             <form asp-action="UpdateApplicationStatus" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="usAppId" />
-                <div class="modal-header border-bottom-0 bg-light">
-                    <h5 class="modal-title"><i class="bi bi-arrow-right-circle me-2 text-success"></i>Aşama İlerlet</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                
+                <div class="mb-4">
+                    <p class="text-muted small mb-1">Öğrenci: <strong id="usStudentName" class="text-white"></strong></p>
+                    <p class="text-muted small mb-0">Mevcut Aşama: <span id="usStageText" class="badge bg-secondary"></span></p>
                 </div>
-                <div class="modal-body">
-                    <p class="text-muted small mb-1">Öğrenci: <strong id="usStudentName" class="text-dark"></strong></p>
-                    <p class="text-muted small mb-3">Mevcut Aşama: <span id="usStageText" class="badge bg-secondary"></span></p>
-                    
-                    <div class="mb-3 p-3 bg-light rounded border">
-                        <label class="form-label fw-bold text-success">Öğrenciyi Hangi Aşamaya Alacaksınız?</label>
-                        <select name="status" id="usStatus" class="form-select border-success">
-                            <option value="@((int)ApplicationStatus.Pending)">Beklemede</option>
-                            <option value="@((int)ApplicationStatus.PreScreening)">Ön Eleme</option>
-                            <option value="@((int)ApplicationStatus.AptitudeTest)">Genel Yetenek Testi</option>
-                            <option value="@((int)ApplicationStatus.LanguageTest)">İngilizce Sınavı</option>
-                            <option value="@((int)ApplicationStatus.Interview)">Mülakat</option>
-                            <option value="@((int)ApplicationStatus.EmployerAccepted)">✓ Kabul Et (Okul'a Gönder)</option>
-                            <option value="@((int)ApplicationStatus.Rejected)">✗ Reddet</option>
-                        </select>
-                        <small class="text-muted mt-2 d-block">
-                            <i class="bi bi-bell"></i> Seçtiğiniz aşamaya göre öğrenciye <b>görev (sınava gir vb.)</b> bildirimi gidecektir.
-                        </small>
-                    </div>
+                
+                <div class="mb-4 p-3 rounded glass-panel" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border);">
+                    <label class="form-label fw-bold text-success">Öğrenciyi Hangi Aşamaya Alacaksınız?</label>
+                    <select name="status" id="usStatus" class="form-select glass-input border-success">
+                        <option value="@((int)ApplicationStatus.Pending)">Beklemede</option>
+                        <option value="@((int)ApplicationStatus.PreScreening)">Ön Eleme</option>
+                        <option value="@((int)ApplicationStatus.AptitudeTest)">Genel Yetenek Testi</option>
+                        <option value="@((int)ApplicationStatus.LanguageTest)">İngilizce Sınavı</option>
+                        <option value="@((int)ApplicationStatus.Interview)">Mülakat</option>
+                        <option value="@((int)ApplicationStatus.EmployerAccepted)">✓ Kabul Et (Okul'a Gönder)</option>
+                        <option value="@((int)ApplicationStatus.Rejected)">✗ Reddet</option>
+                    </select>
+                    <small class="text-muted mt-2 d-block">
+                        <i class="bi bi-bell"></i> Seçtiğiniz aşamaya göre öğrenciye <b>görev (sınava gir vb.)</b> bildirimi gidecektir.
+                    </small>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Öğrenciye Not (Opsiyonel)</label>
-                        <input type="text" name="employerNote" class="form-control" placeholder="Örn: Mülakat linki yakında gönderilecek." />
-                    </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Öğrenciye Not (Opsiyonel)</label>
+                    <textarea name="employerNote" class="form-control glass-input" rows="3" placeholder="Örn: Mülakat linki yakında gönderilecek."></textarea>
                 </div>
-                <div class="modal-footer border-top-0 bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-success">
+                
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('updateStageDrawer')">İptal</button>
+                    <button type="submit" class="btn btn-success flex-fill text-dark fw-bold">
                         <i class="bi bi-arrow-right me-1"></i>Sonraki Aşamaya Taşı
                     </button>
                 </div>
@@ -236,19 +243,19 @@ else
 
 @section Scripts {
     <script>
-        document.getElementById('evaluateModal').addEventListener('show.bs.modal', function (e) {
-            var btn = e.relatedTarget;
-            document.getElementById('evAppId').value = btn.getAttribute('data-appid');
-            document.getElementById('evStudentName').textContent = btn.getAttribute('data-student');
-            document.getElementById('evStageText').textContent = btn.getAttribute('data-statustext');
-        });
+        function openEvaluateDrawer(appId, studentName, stageText) {
+            document.getElementById('evAppId').value = appId;
+            document.getElementById('evStudentName').textContent = studentName;
+            document.getElementById('evStageText').textContent = stageText;
+            window.openPremiumDrawer('evaluateDrawer');
+        }
 
-        document.getElementById('updateStageModal').addEventListener('show.bs.modal', function (e) {
-            var btn = e.relatedTarget;
-            document.getElementById('usAppId').value = btn.getAttribute('data-appid');
-            document.getElementById('usStatus').value = btn.getAttribute('data-status');
-            document.getElementById('usStudentName').textContent = btn.getAttribute('data-student');
-            document.getElementById('usStageText').textContent = btn.getAttribute('data-statustext');
-        });
+        function openUpdateStageDrawer(appId, currentStatus, studentName, stageText) {
+            document.getElementById('usAppId').value = appId;
+            document.getElementById('usStatus').value = currentStatus;
+            document.getElementById('usStudentName').textContent = studentName;
+            document.getElementById('usStageText').textContent = stageText;
+            window.openPremiumDrawer('updateStageDrawer');
+        }
     </script>
 }

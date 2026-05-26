@@ -1,21 +1,39 @@
 @model List<CareerTrack.Models.Entities.DailyLog>
+@using System.Text.Encodings.Web
 @{
     ViewData["Title"] = "Staj Defterim";
+    var approvedApps = ViewBag.ApprovedApplications as List<CareerTrack.Models.Entities.JobApplication> ?? new List<CareerTrack.Models.Entities.JobApplication>();
 }
 
 <div class="page-toolbar">
     <span class="text-muted">Toplam @Model.Count kayıt</span>
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="bi bi-journal-plus me-1"></i> Yeni Günlük
-    </a>
+    @if (approvedApps.Any())
+    {
+        <button type="button" class="btn btn-primary" onclick="openPremiumDrawer('createLogDrawer')">
+            <i class="bi bi-journal-plus me-1"></i> Yeni Günlük
+        </button>
+    }
+    else
+    {
+        <button type="button" class="btn btn-secondary" disabled title="Aktif ve onaylı bir stajınız bulunmamaktadır.">
+            <i class="bi bi-journal-plus me-1"></i> Yeni Günlük
+        </button>
+    }
 </div>
 
 @if (!Model.Any())
 {
     <div class="empty-state-full">
-        <i class="bi bi-journal-x"></i>
-        <h5>Henüz staj günlüğü eklemediniz</h5>
-        <a asp-action="Create" class="btn btn-primary mt-2">İlk Günlüğü Ekle</a>
+        <i class="bi bi-journal-x text-primary" style="font-size: 3rem;"></i>
+        <h5 class="mt-3">Henüz staj günlüğü eklemediniz</h5>
+        @if (approvedApps.Any())
+        {
+            <button type="button" class="btn btn-primary mt-2" onclick="openPremiumDrawer('createLogDrawer')">İlk Günlüğü Ekle</button>
+        }
+        else
+        {
+            <p class="text-muted small mt-2">Günlük yazabilmek için okul onaylı aktif bir stajınız olmalıdır.</p>
+        }
     </div>
 }
 else
@@ -23,8 +41,17 @@ else
     <div class="row g-3">
         @foreach (var log in Model)
         {
-            <div class="col-md-6">
-                <div class="log-card @(log.Status == CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved ? "log-approved" : "")">
+            var statusClass = log.Status switch
+            {
+                CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved => "log-approved",
+                CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer => "log-pending",
+                CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved => "log-revision",
+                CareerTrack.Models.Enums.DailyLogStatus.EmployerRejected => "border-danger",
+                _ => ""
+            };
+
+            <div class="col-md-6 stagger-card">
+                <div class="log-card @statusClass">
                     <div class="log-card-header">
                         <div>
                             <span class="log-day">@log.DayNumber. Gün</span>
@@ -37,10 +64,10 @@ else
                                     <span class="badge bg-secondary"><i class="bi bi-pencil-square me-1"></i>Taslak</span>
                                     break;
                                 case CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer:
-                                    <span class="badge bg-info text-dark"><i class="bi bi-send me-1"></i>İşverene Gönderildi</span>
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-send me-1"></i>Onay Bekliyor</span>
                                     break;
                                 case CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved:
-                                    <span class="badge bg-primary"><i class="bi bi-check me-1"></i>İşveren Onaylı (Okula Gitti)</span>
+                                    <span class="badge bg-primary"><i class="bi bi-check me-1"></i>İşveren Onaylı</span>
                                     break;
                                 case CareerTrack.Models.Enums.DailyLogStatus.EmployerRejected:
                                     <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>İşveren Reddetti</span>
@@ -51,44 +78,282 @@ else
                             }
                         </div>
                     </div>
-                    <p class="log-content">@(log.Content.Length > 150 ? log.Content.Substring(0, 150) + "..." : log.Content)</p>
+                    <p class="log-content text-truncate-custom" style="cursor: pointer;" 
+                       onclick="viewLogDetails(@log.DayNumber, '@log.LogDate.ToString("dd MMMM yyyy")', '@log.Status.ToString()', `@Html.Raw(JavaScriptEncoder.Default.Encode(log.Content))`, `@Html.Raw(JavaScriptEncoder.Default.Encode(log.EmployerNote ?? ""))`, `@Html.Raw(JavaScriptEncoder.Default.Encode(log.SchoolNote ?? ""))`)">
+                        @(log.Content.Length > 150 ? log.Content.Substring(0, 150) + "..." : log.Content)
+                    </p>
                     
                     @if (!string.IsNullOrEmpty(log.EmployerNote))
                     {
-                        <div class="admin-note mt-2">
-                            <i class="bi bi-briefcase me-1"></i><strong>İşveren Notu:</strong> @log.EmployerNote
+                        <div class="admin-note mt-2" style="border-left: 3px solid #ffc107;">
+                            <i class="bi bi-briefcase me-1 text-warning"></i><strong>İşveren Notu:</strong> @log.EmployerNote
                         </div>
                     }
                     @if (!string.IsNullOrEmpty(log.SchoolNote))
                     {
-                        <div class="admin-note mt-2">
-                            <i class="bi bi-bank me-1"></i><strong>Okul Notu:</strong> @log.SchoolNote
+                        <div class="admin-note mt-2" style="border-left: 3px solid #0dcaf0;">
+                            <i class="bi bi-bank me-1 text-info"></i><strong>Okul Notu:</strong> @log.SchoolNote
                         </div>
                     }
 
-                    <div class="log-actions mt-3">
+                    <div class="log-actions mt-3 d-flex gap-2 justify-content-between align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                onclick="viewLogDetails(@log.DayNumber, '@log.LogDate.ToString("dd MMMM yyyy")', '@log.Status.ToString()', `@Html.Raw(JavaScriptEncoder.Default.Encode(log.Content))`, `@Html.Raw(JavaScriptEncoder.Default.Encode(log.EmployerNote ?? ""))`, `@Html.Raw(JavaScriptEncoder.Default.Encode(log.SchoolNote ?? ""))`)">
+                            <i class="bi bi-eye"></i> İncele
+                        </button>
+                        
                         @if (log.Status == CareerTrack.Models.Enums.DailyLogStatus.Draft || log.Status == CareerTrack.Models.Enums.DailyLogStatus.EmployerRejected)
                         {
-                            <form asp-action="SendToEmployer" asp-route-id="@log.Id" method="post" class="d-inline"
-                                  onsubmit="return confirm('Bu günlüğü işveren onayına göndermek istediğinize emin misiniz?')">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-info">
-                                    <i class="bi bi-send"></i> Gönder
+                            <div class="d-flex gap-1">
+                                <form asp-action="SendToEmployer" asp-route-id="@log.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Bu günlüğü işveren onayına göndermek istediğinize emin misiniz?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-send"></i> Gönder
+                                    </button>
+                                </form>
+                                
+                                <button type="button" class="btn btn-sm btn-outline-warning" 
+                                        onclick="openEditLogDrawer(@log.Id, @log.JobApplicationId, @log.DayNumber, '@log.LogDate.ToString("yyyy-MM-dd")', `@Html.Raw(JavaScriptEncoder.Default.Encode(log.Content))`)">
+                                    <i class="bi bi-pencil"></i> Düzenle
                                 </button>
-                            </form>
-                            
-                            <a asp-action="Edit" asp-route-id="@log.Id" class="btn btn-sm btn-outline-warning">
-                                <i class="bi bi-pencil"></i> Düzenle
-                            </a>
-                            <form asp-action="Delete" asp-route-id="@log.Id" method="post" class="d-inline"
-                                  onsubmit="return confirm('Bu günlük kaydını silmek istediğinizden emin misiniz?')">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                            </form>
+
+                                <form asp-action="Delete" asp-route-id="@log.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Bu günlük kaydını silmek istediğinizden emin misiniz?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
                         }
                     </div>
                 </div>
             </div>
         }
     </div>
+}
+
+<!-- ══ YENİ GÜNLÜK DRAWER ══ -->
+<div id="createLogDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('createLogDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-journal-plus me-2 text-primary"></i>Yeni Günlük Ekle</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('createLogDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Staj / Şirket</label>
+                    <select name="JobApplicationId" class="form-select glass-input" required>
+                        <option value="">-- Staj Seçiniz --</option>
+                        @foreach (var app in approvedApps)
+                        {
+                            <option value="@app.Id">@app.Company?.Name - @app.Position</option>
+                        }
+                    </select>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Gün Numarası</label>
+                        <input name="DayNumber" type="number" class="form-control glass-input" min="1" max="365" placeholder="Örn: 1" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Tarih</label>
+                        <input name="LogDate" type="date" class="form-control glass-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Bugün Ne Yaptınız? <span class="text-muted small">(min. 100 karakter)</span></label>
+                    <textarea name="Content" id="createContent" class="form-control glass-input" rows="8" placeholder="Yapılan işler, kullanılan teknolojiler..." required></textarea>
+                    <div class="char-counter mt-1 text-end small">
+                        <span id="createCharCount" style="color: #dc3545;">0</span> / 100 karakter
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-save me-1"></i> Kaydet ve Taslak Oluştur
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══ GÜNLÜK DÜZENLE DRAWER ══ -->
+<div id="editLogDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('editLogDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-pencil-square me-2 text-warning"></i>Günlüğü Düzenle</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('editLogDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <form id="editLogForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editLogId" />
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Staj / Şirket</label>
+                    <select name="JobApplicationId" id="editAppId" class="form-select glass-input" required>
+                        @foreach (var app in approvedApps)
+                        {
+                            <option value="@app.Id">@app.Company?.Name - @app.Position</option>
+                        }
+                    </select>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Gün Numarası</label>
+                        <input name="DayNumber" id="editDayNumber" type="number" class="form-control glass-input" min="1" max="365" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Tarih</label>
+                        <input name="LogDate" id="editLogDate" type="date" class="form-control glass-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Bugün Ne Yaptınız? <span class="text-muted small">(min. 100 karakter)</span></label>
+                    <textarea name="Content" id="editContent" class="form-control glass-input" rows="8" required></textarea>
+                    <div class="char-counter mt-1 text-end small">
+                        <span id="editCharCount">0</span> / 100 karakter
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-warning w-100 py-2 text-dark fw-bold">
+                    <i class="bi bi-save me-1"></i> Güncellemeleri Kaydet
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══ GÜNLÜK DETAY DRAWER ══ -->
+<div id="detailLogDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('detailLogDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-journal-text me-2 text-info"></i>Günlük Detayı</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('detailLogDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="mb-0 text-primary" id="detailDayTitle">1. Gün</h4>
+                    <small class="text-muted" id="detailDateSub"></small>
+                </div>
+                <span class="badge" id="detailStatusBadge"></span>
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-muted small fw-bold uppercase-label">Yazılan İçerik</label>
+                <div class="p-3 rounded glass-panel" id="detailContentText" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);"></div>
+            </div>
+
+            <div id="detailEmployerNoteArea" class="mb-3 d-none">
+                <label class="text-warning small fw-bold uppercase-label"><i class="bi bi-briefcase me-1"></i>İşveren Notu</label>
+                <div class="p-3 rounded" id="detailEmployerNoteText" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(255, 193, 7, 0.2);"></div>
+            </div>
+
+            <div id="detailSchoolNoteArea" class="mb-3 d-none">
+                <label class="text-info small fw-bold uppercase-label"><i class="bi bi-bank me-1"></i>Okul Notu</label>
+                <div class="p-3 rounded" id="detailSchoolNoteText" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; background: rgba(13, 202, 240, 0.05); border: 1px solid rgba(13, 202, 240, 0.2);"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Character counter for Create
+            const createTextarea = document.getElementById('createContent');
+            const createCounter = document.getElementById('createCharCount');
+            if (createTextarea && createCounter) {
+                createTextarea.addEventListener('input', function() {
+                    const len = createTextarea.value.length;
+                    createCounter.textContent = len;
+                    createCounter.style.color = len >= 100 ? '#34d399' : '#f87171';
+                });
+            }
+
+            // Character counter for Edit
+            const editTextarea = document.getElementById('editContent');
+            const editCounter = document.getElementById('editCharCount');
+            if (editTextarea && editCounter) {
+                editTextarea.addEventListener('input', function() {
+                    const len = editTextarea.value.length;
+                    editCounter.textContent = len;
+                    editCounter.style.color = len >= 100 ? '#34d399' : '#f87171';
+                });
+            }
+        });
+
+        function openEditLogDrawer(id, appId, dayNumber, logDate, content) {
+            document.getElementById('editLogId').value = id;
+            document.getElementById('editAppId').value = appId;
+            document.getElementById('editDayNumber').value = dayNumber;
+            document.getElementById('editLogDate').value = logDate;
+            
+            const contentTextarea = document.getElementById('editContent');
+            contentTextarea.value = content;
+            
+            // Trigger character counter check
+            const editCounter = document.getElementById('editCharCount');
+            editCounter.textContent = content.length;
+            editCounter.style.color = content.length >= 100 ? '#34d399' : '#f87171';
+
+            // Update form action target
+            document.getElementById('editLogForm').action = "/DailyLog/Edit/" + id;
+
+            window.openPremiumDrawer('editLogDrawer');
+        }
+
+        function viewLogDetails(dayNumber, logDate, status, content, employerNote, schoolNote) {
+            document.getElementById('detailDayTitle').textContent = dayNumber + ". Gün";
+            document.getElementById('detailDateSub').textContent = logDate;
+            document.getElementById('detailContentText').textContent = content;
+
+            // Status Badge Formatting
+            const badge = document.getElementById('detailStatusBadge');
+            badge.className = "badge";
+            if (status === "SchoolApproved") {
+                badge.classList.add("bg-success");
+                badge.textContent = "Okul Onayladı";
+            } else if (status === "SentToEmployer") {
+                badge.classList.add("bg-warning", "text-dark");
+                badge.textContent = "İşverende Onay Bekliyor";
+            } else if (status === "EmployerApproved") {
+                badge.classList.add("bg-primary");
+                badge.textContent = "İşveren Onaylı";
+            } else if (status === "EmployerRejected") {
+                badge.classList.add("bg-danger");
+                badge.textContent = "İşveren Reddetti";
+            } else {
+                badge.classList.add("bg-secondary");
+                badge.textContent = "Taslak";
+            }
+
+            // Notes area visibility
+            const empArea = document.getElementById('detailEmployerNoteArea');
+            if (employerNote && employerNote.trim() !== "") {
+                document.getElementById('detailEmployerNoteText').textContent = employerNote;
+                empArea.classList.remove('d-none');
+            } else {
+                empArea.classList.add('d-none');
+            }
+
+            const schArea = document.getElementById('detailSchoolNoteArea');
+            if (schoolNote && schoolNote.trim() !== "") {
+                document.getElementById('detailSchoolNoteText').textContent = schoolNote;
+                schArea.classList.remove('d-none');
+            } else {
+                schArea.classList.add('d-none');
+            }
+
+            window.openPremiumDrawer('detailLogDrawer');
+        }
+    </script>
 }

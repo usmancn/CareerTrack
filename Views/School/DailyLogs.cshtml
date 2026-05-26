@@ -41,9 +41,8 @@
                         }
                     </td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                data-bs-target="#logModal" data-id="@log.Id"
-                                data-content="@log.Content" data-note="@log.SchoolNote">
+                        <button class="btn btn-sm btn-outline-primary" 
+                                onclick="openReviewDrawer(@log.Id, `@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(log.Content))`, `@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(log.SchoolNote ?? ""))`)">
                             <i class="bi bi-eye me-1"></i>İncele
                         </button>
                     </td>
@@ -53,44 +52,48 @@
     </table>
 </div>
 
-<div class="modal fade" id="logModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-journal-text me-2"></i>Günlük İnceleme</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p id="modalContent" class="p-3 bg-light rounded"></p>
-                <form asp-action="ApproveLog" method="post">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" id="modalLogId" />
-                    <div class="mb-3">
-                        <label class="form-label">Okul Notu</label>
-                        <textarea name="schoolNote" id="modalNote" class="form-control" rows="2"
-                                  placeholder="Öğrenciye notunuzu yazın..."></textarea>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" name="approve" value="true" class="btn btn-success">
-                            <i class="bi bi-check-circle me-1"></i> Onayla
-                        </button>
-                        <button type="submit" name="approve" value="false" class="btn btn-warning">
-                            <i class="bi bi-arrow-repeat me-1"></i> Revize İste
-                        </button>
-                    </div>
-                </form>
-            </div>
+<!-- Log İnceleme Yan Paneli -->
+<div id="logReviewDrawer" class="premium-drawer">
+    <div class="drawer-overlay" onclick="closePremiumDrawer('logReviewDrawer')"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <span class="drawer-title"><i class="bi bi-journal-text me-2 text-primary"></i>Günlük İnceleme</span>
+            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('logReviewDrawer')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <form asp-action="ApproveLog" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="modalLogId" />
+                
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold">ÖĞRENCİNİN GİRDİĞİ İÇERİK</label>
+                    <div class="p-3 rounded glass-panel" id="modalLogContent" style="min-height: 120px; white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Okul Notu (Opsiyonel / Revize için tavsiye edilir)</label>
+                    <textarea name="schoolNote" id="modalNote" class="form-control glass-input" rows="4" placeholder="Öğrenciye iletmek istediğiniz notlar..."></textarea>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('logReviewDrawer')">Kapat</button>
+                    <button type="submit" name="approve" value="false" class="btn btn-warning flex-fill"><i class="bi bi-arrow-repeat me-1"></i>Revize İste</button>
+                    <button type="submit" name="approve" value="true" class="btn btn-success flex-fill text-dark fw-bold"><i class="bi bi-check-circle me-1"></i>Onayla</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        document.getElementById('logModal').addEventListener('show.bs.modal', function (e) {
-            const btn = e.relatedTarget;
-            document.getElementById('modalLogId').value = btn.dataset.id;
-            document.getElementById('modalContent').textContent = btn.dataset.content;
-            document.getElementById('modalNote').value = btn.dataset.note || '';
-        });
+        function openReviewDrawer(id, content, note) {
+            document.getElementById('modalLogId').value = id;
+            document.getElementById('modalLogContent').textContent = content;
+            document.getElementById('modalNote').value = note || '';
+            window.openPremiumDrawer('logReviewDrawer');
+        }
     </script>
 }

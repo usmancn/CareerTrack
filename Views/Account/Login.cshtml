@@ -1,91 +1,154 @@
 @model CareerTrack.Models.ViewModels.LoginViewModel
 @{
     ViewData["Title"] = "Giriş Yap";
-    Layout = "_Layout";
 }
 
-<div class="auth-card">
-    <div class="auth-card-header">
-        <h2>Giriş Yap</h2>
-        <p>Hesabınıza erişmek için bilgilerinizi girin</p>
-    </div>
-    <div class="auth-card-body">
-        <form asp-action="Login" method="post" id="loginForm">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+<!-- Ultra-Modern Minimal Auth Layout -->
+<div class="auth-modern-container">
+    <div class="auth-particles" id="authParticles"></div>
+    
+    <div class="auth-modern-card">
+        <div class="auth-modern-header">
+            <div class="logo-wrapper">
+                <i class="bi bi-briefcase-fill glow-icon"></i>
+            </div>
+            <h2>CareerTrack</h2>
+            <p>Hesabınıza erişmek için bilgilerinizi girin</p>
+        </div>
 
+        <form asp-action="Login" method="post" id="loginForm" class="premium-form">
+            @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                    <input asp-for="Email" id="emailInput" class="form-control" placeholder="ornek@email.com" autocomplete="username" />
+            <div class="form-group mb-4">
+                <label asp-for="Email" class="form-label">E-posta</label>
+                <div class="input-glass-wrapper">
+                    <i class="bi bi-envelope input-icon"></i>
+                    <input asp-for="Email" class="glass-input-premium" placeholder="ornek@email.com" id="emailInput" />
                 </div>
-                <span asp-validation-for="Email" class="text-danger small"></span>
+                <span asp-validation-for="Email" class="text-danger small mt-1 d-block"></span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                    <input asp-for="Password" id="passwordInput" class="form-control" placeholder="••••••" autocomplete="current-password" />
+            <div class="form-group mb-4">
+                <label asp-for="Password" class="form-label">Şifre</label>
+                <div class="input-glass-wrapper">
+                    <i class="bi bi-lock input-icon"></i>
+                    <input asp-for="Password" class="glass-input-premium" placeholder="••••••••" type="password" id="passwordInput" />
+                    <button type="button" class="btn-eye" onclick="togglePassword()">
+                        <i class="bi bi-eye" id="eyeIcon"></i>
+                    </button>
                 </div>
-                <span asp-validation-for="Password" class="text-danger small"></span>
+                <span asp-validation-for="Password" class="text-danger small mt-1 d-block"></span>
             </div>
 
-            <div class="mb-4 form-check">
-                <input asp-for="RememberMe" class="form-check-input" />
-                <label asp-for="RememberMe" class="form-check-label">Beni hatırla</label>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check custom-checkbox">
+                    <input asp-for="RememberMe" class="form-check-input" type="checkbox" id="rememberMe">
+                    <label asp-for="RememberMe" class="form-check-label text-secondary small" for="rememberMe">Beni hatırla</label>
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 btn-auth">Giriş Yap</button>
+            <button type="submit" class="btn-premium-submit w-100 mb-4">
+                <span>Giriş Yap</span>
+            </button>
         </form>
 
-        
-        <div class="mt-4">
-            <p class="text-muted small text-center mb-2"><i class="bi bi-info-circle me-1"></i>Hızlı giriş için bir hesap seçin:</p>
+        <div class="demo-accounts mt-3">
+            <p class="text-muted small text-center mb-3"><i class="bi bi-info-circle"></i> Hızlı giriş için bir hesap seçin:</p>
             <div class="d-flex flex-column gap-2">
-                <button class="btn btn-sm btn-outline-danger demo-login-btn"
-                        data-email="admin@careertrack.com" data-pass="Admin123!">
-                    <i class="bi bi-shield-fill-check me-2"></i>
-                    <strong>Admin</strong> — admin@careertrack.com
+                <button type="button" class="btn btn-demo" data-email="admin@careertrack.com" data-pass="Admin123!">
+                    <i class="bi bi-shield-lock-fill text-danger me-2"></i> <strong>Admin</strong> <span class="text-muted ms-auto small">— admin@@...</span>
                 </button>
-                <button class="btn btn-sm btn-outline-info demo-login-btn"
-                        data-email="okul@careertrack.com" data-pass="Okul123!">
-                    <i class="bi bi-bank me-2"></i>
-                    <strong>Okul</strong> — okul@careertrack.com
+                <button type="button" class="btn btn-demo" data-email="okul@careertrack.com" data-pass="Okul123!">
+                    <i class="bi bi-bank2 text-primary me-2"></i> <strong>Okul</strong> <span class="text-muted ms-auto small">— okul@@...</span>
                 </button>
-                <button class="btn btn-sm btn-outline-success demo-login-btn"
-                        data-email="isveren@careertrack.com" data-pass="Isveren123!">
-                    <i class="bi bi-building me-2"></i>
-                    <strong>İşveren</strong> — isveren@careertrack.com
+                <button type="button" class="btn btn-demo" data-email="isveren@careertrack.com" data-pass="Isveren123!">
+                    <i class="bi bi-building-fill text-success me-2"></i> <strong>İşveren</strong> <span class="text-muted ms-auto small">— isveren@@...</span>
                 </button>
-                <button class="btn btn-sm btn-outline-secondary demo-login-btn"
-                        data-email="ogrenci@careertrack.com" data-pass="Ogrenci123!">
-                    <i class="bi bi-mortarboard me-2"></i>
-                    <strong>Öğrenci</strong> — ogrenci@careertrack.com
+                <button type="button" class="btn btn-demo" data-email="ogrenci@careertrack.com" data-pass="Ogrenci123!">
+                    <i class="bi bi-mortarboard-fill text-info me-2"></i> <strong>Öğrenci</strong> <span class="text-muted ms-auto small">— ogrenci@@...</span>
                 </button>
             </div>
         </div>
-
-        <div class="auth-divider">
-            <span>Hesabın yok mu?</span>
+        
+        <div class="form-footer mt-4 text-center">
+            <p class="text-muted mb-2">Hesabın yok mu?</p>
+            <a asp-action="Register" class="btn btn-outline-secondary w-100">Kayıt Ol</a>
         </div>
-        <a asp-action="Register" class="btn btn-outline-primary w-100">Kayıt Ol</a>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScripts" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script>
-        document.querySelectorAll('.demo-login-btn').forEach(btn => {
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('bi-eye', 'bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('bi-eye-slash', 'bi-eye');
+            }
+        }
+
+        // Demo Buttons
+        document.querySelectorAll('.btn-demo').forEach(btn => {
             btn.addEventListener('click', function () {
                 document.getElementById('emailInput').value = this.dataset.email;
                 document.getElementById('passwordInput').value = this.dataset.pass;
-                document.getElementById('loginForm').submit();
+                
+                anime({
+                    targets: '#loginForm',
+                    scale: [0.98, 1],
+                    duration: 300,
+                    easing: 'easeOutQuad',
+                    complete: function() {
+                        document.getElementById('loginForm').submit();
+                    }
+                });
+            });
+        });
+
+        // Background Particles & Staggering
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animating main card
+            anime({
+                targets: '.auth-modern-card',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                duration: 800,
+                easing: 'easeOutExpo'
+            });
+
+            // Particles
+            const container = document.getElementById('authParticles');
+            const particleCount = 15;
+            
+            for(let i=0; i<particleCount; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle-glow');
+                const size = Math.random() * 300 + 100;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}%`;
+                p.style.top = `${Math.random() * 100}%`;
+                container.appendChild(p);
+            }
+            
+            anime({
+                targets: '.particle-glow',
+                translateX: () => anime.random(-150, 150),
+                translateY: () => anime.random(-150, 150),
+                scale: () => anime.random(0.8, 1.2),
+                opacity: () => anime.random(0.1, 0.4),
+                duration: () => anime.random(6000, 12000),
+                direction: 'alternate',
+                loop: true,
+                easing: 'easeInOutSine'
             });
         });
     </script>
 }
-

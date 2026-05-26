@@ -4,70 +4,94 @@
 }
 
 <!-- Üst Satır: Kullanıcı & Sistem Özeti -->
-<div class="row g-3 mb-3">
+<div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <div class="stat-card stat-blue">
             <div class="stat-icon"><i class="bi bi-people"></i></div>
-            <div class="stat-value">@Model.TotalUsers</div>
+            <div class="stat-value count-anim">@Model.TotalUsers</div>
             <div class="stat-label">Toplam Kullanıcı</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card stat-green">
             <div class="stat-icon"><i class="bi bi-mortarboard"></i></div>
-            <div class="stat-value">@Model.TotalStudents</div>
+            <div class="stat-value count-anim">@Model.TotalStudents</div>
             <div class="stat-label">Öğrenci</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card stat-orange">
             <div class="stat-icon"><i class="bi bi-briefcase"></i></div>
-            <div class="stat-value">@Model.TotalEmployers</div>
+            <div class="stat-value count-anim">@Model.TotalEmployers</div>
             <div class="stat-label">İşveren</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card stat-red">
             <div class="stat-icon"><i class="bi bi-building"></i></div>
-            <div class="stat-value">@Model.TotalSchools</div>
+            <div class="stat-value count-anim">@Model.TotalSchools</div>
             <div class="stat-label">Okul Personeli</div>
         </div>
     </div>
 </div>
 
-
-
 <!-- Onay Bekleyen Şirketler (varsa) -->
 @if (Model.PendingCompanies > 0)
 {
-    <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-        <div>
-            <strong>@Model.PendingCompanies şirket onay bekliyor.</strong>
-            <a asp-action="Companies" class="alert-link ms-2">Şirket Yönetimi'ne Git →</a>
+    <div class="log-card log-pending d-flex align-items-center justify-content-between mb-4 py-3">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+            <div>
+                <h5 class="mb-1 text-warning fw-bold">Sistem Onayı Bekleyen Şirketler Var!</h5>
+                <p class="mb-0 text-secondary small">Şu anda onayınızı bekleyen <strong>@Model.PendingCompanies</strong> şirket kaydı bulunuyor.</p>
+            </div>
         </div>
+        <a asp-action="Companies" class="btn btn-premium btn-sm py-2">
+            Şirketleri Yönet <i class="bi bi-arrow-right ms-1"></i>
+        </a>
     </div>
 }
 
 <!-- İlan & Şirket Özeti -->
 <div class="row g-3 mb-4">
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-building fs-2 text-primary"></i>
-                <h4 class="mt-2 mb-0">@Model.TotalCompanies</h4>
-                <small class="text-muted">Kayıtlı Şirket</small>
-            </div>
+        <div class="stat-card stat-blue">
+            <div class="stat-icon"><i class="bi bi-building"></i></div>
+            <div class="stat-value count-anim">@Model.TotalCompanies</div>
+            <div class="stat-label">Kayıtlı Şirket</div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-megaphone fs-2 text-success"></i>
-                <h4 class="mt-2 mb-0">@Model.ActiveJobPostings / @Model.TotalJobPostings</h4>
-                <small class="text-muted">Aktif / Toplam İlan</small>
-            </div>
+        <div class="stat-card stat-green">
+            <div class="stat-icon"><i class="bi bi-megaphone"></i></div>
+            <div class="stat-value count-anim">@Model.ActiveJobPostings</div>
+            <div class="stat-label">Aktif İlan</div>
         </div>
+    </div>
+</div>
+
+<!-- Gelişmiş LINQ Raporu: Aşamalara Göre Başvuru Dağılımı -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 pt-4 pb-2">
+        <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-line text-primary me-2"></i>Aşamalara Göre Staj Başvuru Dağılımı (LINQ GroupBy)</h6>
+    </div>
+    <div class="card-body">
+        @if (Model.ApplicationStatusStats.Any())
+        {
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var stat in Model.ApplicationStatusStats.OrderByDescending(x => x.Value))
+                {
+                    <div class="stat-card stat-blue p-3 d-flex flex-column align-items-center justify-content-center" style="min-width: 150px; height: auto;">
+                        <span class="fs-3 fw-bold text-white mb-1">@stat.Value</span>
+                        <span class="small text-secondary text-uppercase" style="letter-spacing: 0.5px;">@stat.Key</span>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted small mb-0">Henüz başvuru verisi bulunmuyor.</p>
+        }
     </div>
 </div>
 
@@ -76,40 +100,42 @@
     <div class="col-lg-6">
         <div class="card-section">
             <div class="section-header">
-                <span><i class="bi bi-journal-check me-2"></i>Son Staj Günlükleri</span>
+                <span><i class="bi bi-journal-check me-2 text-primary"></i>Son Staj Günlükleri</span>
                 <a asp-action="DailyLogs" class="see-all">Tümünü Gör</a>
             </div>
-            @if (!Model.RecentDailyLogs.Any())
-            {
-                <div class="empty-state"><i class="bi bi-inbox"></i><p>Henüz günlük yok</p></div>
-            }
-            @foreach (var log in Model.RecentDailyLogs.Take(5))
-            {
-                <div class="list-item">
-                    <div class="list-item-icon">
-                        <i class="bi bi-journal-text"></i>
+            <div class="p-0">
+                @if (!Model.RecentDailyLogs.Any())
+                {
+                    <div class="empty-state"><i class="bi bi-inbox mb-2"></i><p>Henüz günlük yok</p></div>
+                }
+                @foreach (var log in Model.RecentDailyLogs.Take(5))
+                {
+                    <div class="list-item">
+                        <div class="list-item-icon">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                        <div class="list-item-body">
+                            <div class="list-item-title">@log.Student?.FullName — @log.DayNumber. Gün</div>
+                            <div class="list-item-sub">@log.LogDate.ToString("dd.MM.yyyy")</div>
+                        </div>
+                        @switch (log.Status)
+                        {
+                            case CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved:
+                                <span class="status-badge status-completed">Okul Onaylı</span>
+                                break;
+                            case CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved:
+                                <span class="status-badge status-offered">İşveren Onaylı</span>
+                                break;
+                            case CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer:
+                                <span class="status-badge status-inreview">İşverende</span>
+                                break;
+                            default:
+                                <span class="status-badge status-pending">@log.Status.ToString()</span>
+                                break;
+                        }
                     </div>
-                    <div class="list-item-body">
-                        <div class="list-item-title">@log.Student?.FullName — @log.DayNumber. Gün</div>
-                        <div class="list-item-sub">@log.LogDate.ToString("dd.MM.yyyy")</div>
-                    </div>
-                    @switch (log.Status)
-                    {
-                        case CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved:
-                            <span class="badge bg-success">Okul Onaylı</span>
-                            break;
-                        case CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved:
-                            <span class="badge bg-primary">İşveren Onaylı</span>
-                            break;
-                        case CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer:
-                            <span class="badge bg-info text-dark">İşverende</span>
-                            break;
-                        default:
-                            <span class="badge bg-secondary">@log.Status.ToString()</span>
-                            break;
-                    }
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 
@@ -117,40 +143,42 @@
     <div class="col-lg-6">
         <div class="card-section">
             <div class="section-header">
-                <span><i class="bi bi-send me-2"></i>Son Başvurular</span>
+                <span><i class="bi bi-send me-2 text-success"></i>Son Başvurular</span>
                 <a asp-action="Applications" class="see-all">Tümünü Gör</a>
             </div>
-            @if (!Model.RecentApplications.Any())
-            {
-                <div class="empty-state"><i class="bi bi-inbox"></i><p>Henüz başvuru yok</p></div>
-            }
-            @foreach (var app in Model.RecentApplications)
-            {
-                <div class="list-item">
-                    <div class="list-item-icon interview-icon">
-                        <i class="bi bi-person"></i>
+            <div class="p-0">
+                @if (!Model.RecentApplications.Any())
+                {
+                    <div class="empty-state"><i class="bi bi-inbox mb-2"></i><p>Henüz başvuru yok</p></div>
+                }
+                @foreach (var app in Model.RecentApplications)
+                {
+                    <div class="list-item">
+                        <div class="list-item-icon interview-icon">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div class="list-item-body">
+                            <div class="list-item-title">@app.Student?.FullName</div>
+                            <div class="list-item-sub">@app.Company?.Name — @app.Position</div>
+                        </div>
+                        <span class="status-badge status-@app.Status.ToString().ToLower()">
+                            @(app.Status switch {
+                                ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                                ApplicationStatus.SchoolRevision => "Revize İstendi",
+                                ApplicationStatus.SchoolApproved => "Staj Devam Ediyor",
+                                ApplicationStatus.PreScreening => "Ön Eleme",
+                                ApplicationStatus.AptitudeTest => "Test",
+                                ApplicationStatus.LanguageTest => "Dil Sınavı",
+                                ApplicationStatus.Interview => "Mülakat",
+                                ApplicationStatus.EmployerAccepted => "Kabul Edildi",
+                                ApplicationStatus.Rejected => "Reddedildi",
+                                ApplicationStatus.Completed => "Tamamlandı",
+                                _ => app.Status.ToString()
+                            })
+                        </span>
                     </div>
-                    <div class="list-item-body">
-                        <div class="list-item-title">@app.Student?.FullName</div>
-                        <div class="list-item-sub">@app.Company?.Name — @app.Position</div>
-                    </div>
-                    <span class="status-badge status-@app.Status.ToString().ToLower()">
-                        @(app.Status switch {
-                            ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
-                            ApplicationStatus.SchoolRevision => "Revize İstendi",
-                            ApplicationStatus.SchoolApproved => "Okul Onaylı",
-                            ApplicationStatus.PreScreening => "Ön Eleme",
-                            ApplicationStatus.AptitudeTest => "Test",
-                            ApplicationStatus.LanguageTest => "Dil Sınavı",
-                            ApplicationStatus.Interview => "Mülakat",
-                            ApplicationStatus.EmployerAccepted => "Kabul Edildi",
-                            ApplicationStatus.Rejected => "Reddedildi",
-                            ApplicationStatus.Completed => "Tamamlandı",
-                            _ => app.Status.ToString()
-                        })
-                    </span>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 </div>
