@@ -1,0 +1,57 @@
+@model CareerTrack.Models.ViewModels.UserRoleManagementViewModel
+@{
+    ViewData["Title"] = "Kullanıcı Rolleri";
+}
+
+<div class="table-card">
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Kullanıcı</th>
+                <th>E-posta</th>
+                <th>Bölüm</th>
+                <th>Mevcut Rol</th>
+                <th class="text-end">Rol Atama</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Users)
+            {
+                <tr>
+                    <td>
+                        <strong>@user.FullName</strong>
+                        @if (user.IsCurrentUser)
+                        {
+                            <span class="badge bg-secondary ms-2">Siz</span>
+                        }
+                    </td>
+                    <td>@user.Email</td>
+                    <td>@(user.Department ?? "-")</td>
+                    <td><span class="badge bg-primary">@user.CurrentRole</span></td>
+                    <td>
+                        <form asp-action="UpdateUserRole" method="post" class="role-update-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="userId" value="@user.UserId" />
+                            <select name="role" class="form-select form-select-sm" @(user.IsCurrentUser ? "disabled" : "")>
+                                @foreach (var role in AppRoles.All)
+                                {
+                                    if (role == user.SelectedRole)
+                                    {
+                                        <option value="@role" selected>@AppRoles.DisplayName(role)</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@role">@AppRoles.DisplayName(role)</option>
+                                    }
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary" @(user.IsCurrentUser ? "disabled" : "")>
+                                <i class="bi bi-check2"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

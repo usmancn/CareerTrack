@@ -14,6 +14,7 @@
                 <th>Staj Türü</th>
                 <th>Durum</th>
                 <th>Mülakatlar</th>
+                <th class="text-end">İşlem</th>
             </tr>
         </thead>
         <tbody>
@@ -45,6 +46,43 @@
                         </span>
                     </td>
                     <td><span class="badge bg-info text-dark">@app.Interviews.Count aşama</span></td>
+                    <td class="text-end">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown">
+                                Durum Güncelle
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                @foreach (ApplicationStatus status in Enum.GetValues(typeof(ApplicationStatus)))
+                                {
+                                    <li>
+                                        <form asp-action="UpdateApplicationStatus" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@app.Id" />
+                                            <input type="hidden" name="status" value="@status" />
+                                            <button type="submit" class="dropdown-item @(app.Status == status ? "active" : "")">
+                                                @switch (status)
+                                                {
+                                                    case ApplicationStatus.Pending:
+                                                        <text>⏳ Bekliyor</text>
+                                                        break;
+                                                    case ApplicationStatus.InReview:
+                                                        <text>🔍 Değerlendirmede</text>
+                                                        break;
+                                                    case ApplicationStatus.Offered:
+                                                        <text>✅ Teklif Gönder</text>
+                                                        break;
+                                                    case ApplicationStatus.Rejected:
+                                                        <text>❌ Reddet</text>
+                                                        break;
+                                                }
+                                            </button>
+                                        </form>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </td>
                 </tr>
             }
         </tbody>

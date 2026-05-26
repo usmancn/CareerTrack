@@ -126,6 +126,7 @@ body {
   min-height: 100vh;
   transition: var(--transition);
 }
+.sidebar.collapsed + .main-content { margin-left: 64px; }
 
 .top-header {
   background: var(--bg-card);
@@ -298,11 +299,50 @@ body {
   background: var(--bg-card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow: hidden;
+  overflow-x: auto;
 }
 .table-card .table { margin-bottom: 0; }
 .table thead { background: #f8fafc; }
 .table thead th { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid var(--border); }
+
+/* ── Inline Management Forms ────────────────────── */
+.role-update-form,
+.company-row-form,
+.company-edit-form,
+.todo-edit-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.role-update-form {
+  justify-content: flex-end;
+}
+.role-update-form .form-select {
+  max-width: 150px;
+}
+.company-row-form {
+  width: 100%;
+}
+.company-edit-form {
+  flex: 1;
+  min-width: 0;
+}
+.company-edit-form .form-control {
+  min-width: 140px;
+}
+.todo-edit-form {
+  flex: 1;
+  min-width: 0;
+}
+.todo-edit-form input[type="text"] {
+  min-width: 180px;
+}
+.todo-edit-form input[type="date"] {
+  max-width: 160px;
+}
+.todo-due-date {
+  white-space: nowrap;
+}
 
 /* ── Page Toolbar ──────────────────────────────── */
 .page-toolbar {
@@ -427,9 +467,40 @@ body {
 
 /* ── Responsive ────────────────────────────────── */
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); }
+  .sidebar {
+    width: var(--sidebar-width);
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.collapsed { width: var(--sidebar-width); }
   .sidebar.mobile-open { transform: translateX(0); }
   .main-content { margin-left: 0; }
+  .sidebar.collapsed + .main-content { margin-left: 0; }
+  .top-header { padding: 12px 16px; }
+  .header-user span { display: none; }
   .welcome-banner { flex-direction: column; gap: 16px; text-align: center; }
   .content-area { padding: 16px; }
+  .page-toolbar { flex-direction: column; align-items: stretch; gap: 12px; }
+  .form-actions { flex-direction: column; }
+  .role-update-form,
+  .company-row-form,
+  .company-edit-form,
+  .todo-edit-form {
+    align-items: stretch;
+  }
+  .company-row-form,
+  .company-edit-form,
+  .todo-edit-form {
+    flex-direction: column;
+  }
+  .role-update-form {
+    justify-content: flex-start;
+  }
+  .role-update-form .form-select,
+  .todo-edit-form input[type="date"] {
+    max-width: none;
+  }
+  .todo-list-item {
+    align-items: flex-start;
+  }
 }

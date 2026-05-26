@@ -1,4 +1,5 @@
 using CareerTrack.Data;
+using CareerTrack.Models.Constants;
 using CareerTrack.Models.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CareerTrack.Controllers
 {
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = AppRoles.Student)]
     public class OfferController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -48,9 +49,18 @@ namespace CareerTrack.Controllers
         {
             var userId = await GetUserIdAsync();
             var app = await _context.JobApplications
+                .Include(a => a.Company)
                 .FirstOrDefaultAsync(a => a.Id == model.JobApplicationId && a.StudentId == userId);
 
             if (app == null) return NotFound();
+
+            var existing = await _context.Offers
+                .FirstOrDefaultAsync(o => o.JobApplicationId == model.JobApplicationId);
+            if (existing != null)
+            {
+                TempData["Error"] = "Bu başvuru için teklif detayları zaten eklenmiş.";
+                return RedirectToAction(nameof(Details), new { id = existing.Id });
+            }
 
             // Son dönüş tarihi geçmiş olamaz
             if (model.DeadlineDate < DateTime.Today)

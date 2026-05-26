@@ -1,27 +1,33 @@
-@model List<CareerTrack.Models.Entities.Company>
+@model CareerTrack.Models.ViewModels.CompanyManagementViewModel
 @{
     ViewData["Title"] = "Şirket Yönetimi";
+    var pendingCompanies = Model.Companies.Where(c => !c.IsApproved).ToList();
+    var approvedCompanies = Model.Companies.Where(c => c.IsApproved).ToList();
 }
 
 <div class="row g-4">
-    <!-- Şirket Ekleme Formu -->
     <div class="col-lg-4">
         <div class="form-card">
             <div class="form-card-header"><i class="bi bi-building-add me-2"></i>Şirket Ekle</div>
             <div class="form-card-body">
                 <form asp-action="AddCompany" method="post">
                     @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
                     <div class="mb-3">
-                        <label class="form-label">Şirket Adı *</label>
-                        <input type="text" name="name" class="form-control" required placeholder="Örn: TechCorp A.Ş." />
+                        <label asp-for="Form.Name" class="form-label"></label>
+                        <input asp-for="Form.Name" class="form-control" placeholder="Örn: TechCorp A.Ş." />
+                        <span asp-validation-for="Form.Name" class="text-danger small"></span>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Sektör</label>
-                        <input type="text" name="sector" class="form-control" placeholder="Yazılım, Finans..." />
+                        <label asp-for="Form.Sector" class="form-label"></label>
+                        <input asp-for="Form.Sector" class="form-control" placeholder="Yazılım, Finans..." />
+                        <span asp-validation-for="Form.Sector" class="text-danger small"></span>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Konum</label>
-                        <input type="text" name="location" class="form-control" placeholder="İstanbul, Ankara..." />
+                        <label asp-for="Form.Location" class="form-label"></label>
+                        <input asp-for="Form.Location" class="form-control" placeholder="İstanbul, Ankara..." />
+                        <span asp-validation-for="Form.Location" class="text-danger small"></span>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-plus-circle me-1"></i> Ekle
@@ -31,21 +37,110 @@
         </div>
     </div>
 
-    <!-- Şirket Listesi -->
     <div class="col-lg-8">
+        <!-- Onay Bekleyen Şirketler -->
+        @if (pendingCompanies.Any())
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-warning bg-opacity-10 border-warning">
+                    <h6 class="mb-0 text-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Onay Bekleyen Şirket Önerileri
+                        <span class="badge bg-warning text-dark ms-2">@pendingCompanies.Count</span>
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Şirket Adı</th>
+                                    <th>Sektör</th>
+                                    <th>Konum</th>
+                                    <th>Öneren</th>
+                                    <th class="text-end">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in pendingCompanies)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@c.Name</td>
+                                        <td>@c.Sector</td>
+                                        <td>@c.Location</td>
+                                        <td>
+                                            @if (c.CreatedBy != null)
+                                            {
+                                                <small class="text-muted">@c.CreatedBy.FullName</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">—</small>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <form asp-action="ApproveCompany" asp-route-id="@c.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="approve" value="true" />
+                                                <button type="submit" class="btn btn-sm btn-success me-1" title="Onayla">
+                                                    <i class="bi bi-check-lg"></i> Onayla
+                                                </button>
+                                            </form>
+                                            <form asp-action="ApproveCompany" asp-route-id="@c.Id" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Bu şirket önerisini reddetmek istediğinize emin misiniz?')">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="approve" value="false" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Reddet">
+                                                    <i class="bi bi-x-lg"></i> Reddet
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Onaylı Şirketler -->
         <div class="table-card">
-            <table class="table align-middle">
+            <table class="table align-middle mb-0">
                 <thead>
-                    <tr><th>Şirket Adı</th><th>Sektör</th><th>Konum</th><th>Başvuru</th></tr>
+                    <tr>
+                        <th>Şirket Adı</th>
+                        <th>Sektör</th>
+                        <th>Konum</th>
+                        <th>Başvuru</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
                 </thead>
                 <tbody>
-                    @foreach (var c in Model)
+                    @foreach (var c in approvedCompanies)
                     {
                         <tr>
-                            <td><strong>@c.Name</strong></td>
-                            <td>@c.Sector</td>
-                            <td><i class="bi bi-geo-alt me-1"></i>@c.Location</td>
-                            <td><span class="badge bg-primary">@c.JobApplications.Count</span></td>
+                            <td colspan="5">
+                                <div class="company-row-form">
+                                    <form asp-action="EditCompany" method="post" class="company-edit-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="Id" value="@c.Id" />
+                                        <input type="text" name="Name" value="@c.Name" class="form-control form-control-sm" required minlength="2" maxlength="200" />
+                                        <input type="text" name="Sector" value="@c.Sector" class="form-control form-control-sm" required maxlength="100" />
+                                        <input type="text" name="Location" value="@c.Location" class="form-control form-control-sm" required maxlength="200" />
+                                        <span class="badge bg-primary">@c.JobApplications.Count başvuru</span>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-save"></i>
+                                        </button>
+                                    </form>
+                                    <form asp-action="DeleteCompany" asp-route-id="@c.Id" method="post" class="d-inline"
+                                          onsubmit="return confirm('Bu şirketi silmek istediğinizden emin misiniz?')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" @(c.JobApplications.Any() ? "disabled" : "")>
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -53,3 +148,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScripts" />
+}

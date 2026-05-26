@@ -1,4 +1,5 @@
 using CareerTrack.Data;
+using CareerTrack.Models.Constants;
 using CareerTrack.Models.Entities;
 using CareerTrack.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CareerTrack.Controllers
 {
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = AppRoles.Student)]
     public class DailyLogController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -91,6 +92,12 @@ namespace CareerTrack.Controllers
 
             if (log == null) return NotFound();
 
+            if (log.IsApprovedByAdmin)
+            {
+                TempData["Error"] = "Danışman tarafından onaylanmış bir kaydı düzenleyemezsiniz.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var vm = new DailyLogCreateViewModel
             {
                 Id = log.Id,
@@ -106,8 +113,6 @@ namespace CareerTrack.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, DailyLogCreateViewModel vm)
         {
-            if (!ModelState.IsValid) return View(vm);
-
             var userId = await GetUserIdAsync();
             var log = await _context.DailyLogs
                 .FirstOrDefaultAsync(d => d.Id == id && d.StudentId == userId);
@@ -120,6 +125,20 @@ namespace CareerTrack.Controllers
                 TempData["Error"] = "Danışman tarafından onaylanmış bir kaydı düzenleyemezsiniz.";
                 return RedirectToAction(nameof(Index));
             }
+
+            if (vm.LogDate > DateTime.Today)
+            {
+                ModelState.AddModelError(nameof(vm.LogDate), "Staj defteri tarihi bugünden ileri olamaz.");
+            }
+
+            var duplicateDay = await _context.DailyLogs
+                .AnyAsync(d => d.StudentId == userId && d.DayNumber == vm.DayNumber && d.Id != id);
+            if (duplicateDay)
+            {
+                ModelState.AddModelError(nameof(vm.DayNumber), $"{vm.DayNumber}. gün için zaten bir kayıt mevcut.");
+            }
+
+            if (!ModelState.IsValid) return View(vm);
 
             log.DayNumber = vm.DayNumber;
             log.LogDate = vm.LogDate;
@@ -141,6 +160,12 @@ namespace CareerTrack.Controllers
                 .FirstOrDefaultAsync(d => d.Id == id && d.StudentId == userId);
 
             if (log == null) return NotFound();
+
+            if (log.IsApprovedByAdmin)
+            {
+                TempData["Error"] = "Danışman tarafından onaylanmış bir kaydı silemezsiniz.";
+                return RedirectToAction(nameof(Index));
+            }
 
             _context.DailyLogs.Remove(log);
             await _context.SaveChangesAsync();

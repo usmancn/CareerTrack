@@ -1,4 +1,5 @@
 using CareerTrack.Data;
+using CareerTrack.Models.Constants;
 using CareerTrack.Models.Entities;
 using CareerTrack.Models.Enums;
 using CareerTrack.Models.ViewModels;
@@ -26,9 +27,13 @@ namespace CareerTrack.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return RedirectToAction("Login", "Account");
 
-            // Admin'i kendi paneline yönlendir
-            if (User.IsInRole("Admin"))
+            // Rollere göre kendi panellerine yönlendir
+            if (User.IsInRole(AppRoles.Admin))
                 return RedirectToAction("Index", "Admin");
+            if (User.IsInRole(AppRoles.School))
+                return RedirectToAction("Index", "School");
+            if (User.IsInRole(AppRoles.Employer))
+                return RedirectToAction("Index", "Employer");
 
             var studentId = user.Id;
 

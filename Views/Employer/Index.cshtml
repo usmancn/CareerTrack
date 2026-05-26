@@ -1,0 +1,157 @@
+@model EmployerDashboardViewModel
+@{
+    ViewData["Title"] = "İşveren Paneli";
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-building fs-1 text-primary"></i>
+                <h3 class="mt-2 mb-0">@Model.CompanyName</h3>
+                <small class="text-muted">Şirketiniz</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-megaphone fs-1 text-success"></i>
+                <h3 class="mt-2 mb-0">@Model.ActivePostings / @Model.TotalPostings</h3>
+                <small class="text-muted">Aktif / Toplam İlan</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-people fs-1 text-info"></i>
+                <h3 class="mt-2 mb-0">@Model.TotalApplications</h3>
+                <small class="text-muted">Toplam Başvuru</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-hourglass-split fs-1 text-warning"></i>
+                <h3 class="mt-2 mb-0">@Model.PendingApplications</h3>
+                <small class="text-muted">Bekleyen Başvuru</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Son İlanlar -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-megaphone me-2"></i>Son İlanlar</h5>
+                <a asp-action="Postings" class="btn btn-sm btn-outline-primary">Tümünü Gör</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentPostings.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Pozisyon</th>
+                                    <th>Kontenjan</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var posting in Model.RecentPostings)
+                                {
+                                    <tr>
+                                        <td>@posting.Title</td>
+                                        <td>@posting.Quota kişi</td>
+                                        <td>
+                                            @if (posting.IsActive)
+                                            {
+                                                <span class="badge bg-success">Aktif</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Pasif</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-megaphone fs-1"></i>
+                        <p class="mt-2">Henüz ilan yayınlanmamış.</p>
+                        <a asp-action="CreatePosting" class="btn btn-primary btn-sm">İlk İlanınızı Oluşturun</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Son Başvurular -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Son Başvurular</h5>
+                <a asp-action="Applications" class="btn btn-sm btn-outline-primary">Tümünü Gör</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentApplications.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Öğrenci</th>
+                                    <th>Pozisyon</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var app in Model.RecentApplications)
+                                {
+                                    <tr>
+                                        <td>@app.Student?.FullName</td>
+                                        <td>@app.Position</td>
+                                        <td>
+                                            @switch (app.Status)
+                                            {
+                                                case ApplicationStatus.Pending:
+                                                    <span class="badge bg-warning text-dark">Bekliyor</span>
+                                                    break;
+                                                case ApplicationStatus.InReview:
+                                                    <span class="badge bg-info">Değerlendirmede</span>
+                                                    break;
+                                                case ApplicationStatus.Offered:
+                                                    <span class="badge bg-success">Teklif Gönderildi</span>
+                                                    break;
+                                                case ApplicationStatus.Rejected:
+                                                    <span class="badge bg-danger">Reddedildi</span>
+                                                    break;
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-2">Henüz başvuru yok.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

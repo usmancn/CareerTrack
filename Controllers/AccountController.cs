@@ -1,3 +1,4 @@
+using CareerTrack.Models.Constants;
 using CareerTrack.Models.Entities;
 using CareerTrack.Models.ViewModels;
 using Microsoft.AspNetCore.Identity;
@@ -41,8 +42,12 @@ namespace CareerTrack.Controllers
             {
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 var roles = await _userManager.GetRolesAsync(user!);
-                if (roles.Contains("Admin"))
+                if (roles.Contains(AppRoles.Admin))
                     return RedirectToAction("Index", "Admin");
+                if (roles.Contains(AppRoles.School))
+                    return RedirectToAction("Index", "School");
+                if (roles.Contains(AppRoles.Employer))
+                    return RedirectToAction("Index", "Employer");
                 return RedirectToLocal(returnUrl);
             }
 
@@ -78,7 +83,7 @@ namespace CareerTrack.Controllers
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(user, "Student");
+                await _userManager.AddToRoleAsync(user, AppRoles.Student);
                 await _signInManager.SignInAsync(user, isPersistent: false);
                 return RedirectToAction("Index", "Dashboard");
             }
