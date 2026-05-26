@@ -56,14 +56,9 @@
                             <i class="bi bi-circle"></i>
                         </button>
                     </form>
-                    <form asp-action="Edit" asp-route-id="@todo.Id" method="post" class="todo-edit-form">
-                        @Html.AntiForgeryToken()
-                        <input type="text" name="taskTitle" value="@todo.TaskTitle" class="form-control form-control-sm" required minlength="3" maxlength="200" />
-                        <input type="date" name="dueDate" value="@todo.DueDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" required />
-                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Görevi güncelle">
-                            <i class="bi bi-save"></i>
-                        </button>
-                    </form>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold" style="color: var(--text-primary);">@todo.TaskTitle</div>
+                    </div>
                     <small class="todo-due-date @(DateTime.Today > todo.DueDate ? "text-danger" : "text-muted")">
                         <i class="bi bi-calendar3 me-1"></i>@todo.DueDate.ToString("dd MMM yyyy")
                     </small>
