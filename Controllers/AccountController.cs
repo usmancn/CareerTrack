@@ -41,6 +41,14 @@ namespace CareerTrack.Controllers
             if (result.Succeeded)
             {
                 var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user != null)
+                {
+                    var claims = await _userManager.GetClaimsAsync(user);
+                    if (claims.Any(c => c.Type == "RequiresPasswordChange" && c.Value == "true"))
+                    {
+                        return RedirectToAction("Settings", "Profile");
+                    }
+                }
                 var roles = await _userManager.GetRolesAsync(user!);
                 if (roles.Contains(AppRoles.Admin))
                     return RedirectToAction("Index", "Admin");

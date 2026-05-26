@@ -686,6 +686,12 @@ h1, h2, h3, h4, h5, h6, .welcome-title, .header-title, .brand-logo {
 .btn-secondary-premium:hover {
     background: rgba(255, 255, 255, 0.08);
 }
+.btn-check:checked + .btn-secondary-premium {
+    background: rgba(67, 97, 238, 0.15); /* Soft primary background */
+    border-color: #4361ee;
+    color: white;
+    box-shadow: 0 0 15px rgba(67, 97, 238, 0.2);
+}
 
 /* ── Modern Tables ────────────────────────────── */
 .table-card {

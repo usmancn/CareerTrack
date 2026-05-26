@@ -199,7 +199,20 @@ namespace CareerTrack.Controllers
             };
 
             var result = await _userManager.CreateAsync(user, vm.Password);
-            if (!result.Succeeded)
+            if (result.Succeeded)
+            {
+                if (AppRoles.All.Contains(vm.Role))
+                {
+                    await _userManager.AddToRoleAsync(user, vm.Role);
+                }
+
+                // Add RequiresPasswordChange claim so they are forced to change their password
+                await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("RequiresPasswordChange", "true"));
+
+                TempData["Success"] = $"{vm.FullName} adlı kullanıcı başarıyla oluşturuldu ve {AppRoles.DisplayName(vm.Role)} rolü atandı.";
+                return RedirectToAction(nameof(Users));
+            }
+            else
             {
                 foreach (var error in result.Errors)
                 {
@@ -207,15 +220,6 @@ namespace CareerTrack.Controllers
                 }
                 return View(vm);
             }
-
-            // Assign role
-            if (AppRoles.All.Contains(vm.Role))
-            {
-                await _userManager.AddToRoleAsync(user, vm.Role);
-            }
-
-            TempData["Success"] = $"{vm.FullName} adlı kullanıcı başarıyla oluşturuldu ve {AppRoles.DisplayName(vm.Role)} rolü atandı.";
-            return RedirectToAction(nameof(Users));
         }
 
         // GET: /Admin/DailyLogs

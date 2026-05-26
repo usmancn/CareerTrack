@@ -23,6 +23,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/CareerTrack.styles.css" asp-append-version="true" />
+
+    @if (User.HasClaim("RequiresPasswordChange", "true") && ViewContext.RouteData.Values["Controller"]?.ToString() != "Profile")
+    {
+        <script>
+            window.location.replace('/Profile/Settings');
+        </script>
+    }
 </head>
 <body>
 
@@ -192,6 +200,16 @@
                         </a>
                     </li>
                 }
+
+                <li class="nav-item mt-2">
+                    <hr class="border-secondary opacity-25 mx-3 my-2" />
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(currentController == "Profile" ? "active" : "")"
+                       asp-controller="Profile" asp-action="Settings">
+                        <i class="bi bi-person-gear"></i> Profil Ayarları
+                    </a>
+                </li>
             </ul>
 
             <div class="sidebar-footer">

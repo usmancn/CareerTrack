@@ -1,0 +1,99 @@
+@model CareerTrack.Models.ViewModels.ProfileSettingsViewModel
+@{
+    ViewData["Title"] = "Profil Ayarları";
+}
+
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-8 mx-auto">
+            @if (ViewBag.RequiresPasswordChange == true)
+            {
+                <div class="alert alert-warning border-0 shadow-lg d-flex align-items-center mb-4 rounded-4 p-4 glass-panel" style="background: rgba(255, 193, 7, 0.1) !important; border-left: 4px solid #ffc107 !important;">
+                    <i class="bi bi-exclamation-triangle-fill fs-2 me-4 text-warning"></i>
+                    <div>
+                        <h5 class="fw-bold mb-1 text-warning">Güvenlik Uyarısı: Şifre Değişimi Zorunlu</h5>
+                        <p class="mb-0 text-white opacity-75">Hesabınız bir sistem yöneticisi tarafından oluşturulmuş. Güvenliğiniz için lütfen sistemin size atadığı geçici şifreyi kendi belirleyeceğiniz güçlü bir şifre ile değiştirin. <strong>Şifrenizi değiştirmeden sistemi kullanamazsınız.</strong></p>
+                    </div>
+                </div>
+            }
+
+            <div class="table-card glass-panel border-0 p-1">
+                <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-person-gear text-primary me-2"></i>Hesap Bilgileri & Güvenlik</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Settings" method="post" class="premium-form">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-4 rounded-3 border-0"></div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="FullName" class="form-label text-secondary small fw-bold text-uppercase"></label>
+                                <div class="input-glass-wrapper">
+                                    <i class="bi bi-person input-icon text-primary"></i>
+                                    <input asp-for="FullName" class="glass-input-premium" />
+                                </div>
+                                <span asp-validation-for="FullName" class="text-danger small mt-1 d-block"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label text-secondary small fw-bold text-uppercase"></label>
+                                <div class="input-glass-wrapper opacity-50">
+                                    <i class="bi bi-envelope input-icon"></i>
+                                    <input asp-for="Email" class="glass-input-premium" readonly disabled />
+                                    <input type="hidden" asp-for="Email" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label asp-for="Department" class="form-label text-secondary small fw-bold text-uppercase"></label>
+                            <div class="input-glass-wrapper">
+                                <i class="bi bi-building input-icon text-primary"></i>
+                                <input asp-for="Department" class="glass-input-premium" />
+                            </div>
+                        </div>
+
+                        <div class="position-relative my-5">
+                            <hr class="border-secondary opacity-25" />
+                            <span class="position-absolute top-50 start-50 translate-middle px-3 text-secondary small fw-bold text-uppercase" style="background: var(--card-bg);">Şifre Güncelleme</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="OldPassword" class="form-label text-secondary small fw-bold text-uppercase"></label>
+                            <div class="input-glass-wrapper">
+                                <i class="bi bi-lock input-icon text-warning"></i>
+                                <input asp-for="OldPassword" class="glass-input-premium" placeholder="Mevcut geçici şifreniz" />
+                            </div>
+                            <span asp-validation-for="OldPassword" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="NewPassword" class="form-label text-secondary small fw-bold text-uppercase"></label>
+                                <div class="input-glass-wrapper">
+                                    <i class="bi bi-key input-icon text-success"></i>
+                                    <input asp-for="NewPassword" class="glass-input-premium" placeholder="Yeni şifreniz" />
+                                </div>
+                                <span asp-validation-for="NewPassword" class="text-danger small mt-1 d-block"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ConfirmPassword" class="form-label text-secondary small fw-bold text-uppercase"></label>
+                                <div class="input-glass-wrapper">
+                                    <i class="bi bi-shield-check input-icon text-success"></i>
+                                    <input asp-for="ConfirmPassword" class="glass-input-premium" placeholder="Şifrenizi tekrar girin" />
+                                </div>
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small mt-1 d-block"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm rounded-pill fw-bold">
+                                <i class="bi bi-check2-circle me-2"></i> Kaydet ve Güncelle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
