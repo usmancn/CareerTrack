@@ -215,7 +215,7 @@ namespace CareerTrack.Controllers
             return RedirectToAction(nameof(Postings));
         }
 
-        // GET: /Employer/Applications — İlanlara gelen başvurular
+        // GET: /Employer/Applications — Sadece yeni (Pending) başvurular - Ön Eleme kararı verilir
         public async Task<IActionResult> Applications()
         {
             var user = await GetCurrentUserAsync();
@@ -224,8 +224,27 @@ namespace CareerTrack.Controllers
             var apps = await _context.JobApplications
                 .Include(a => a.Student)
                 .Include(a => a.Company)
-                .Include(a => a.ToDos) // Öğrencinin aşama görevleri
-                .Where(a => a.CompanyId == user.CompanyId.Value)
+                .Include(a => a.ToDos)
+                .Where(a => a.CompanyId == user.CompanyId.Value && a.Status == ApplicationStatus.Pending)
+                .OrderByDescending(a => a.ApplicationDate)
+                .ToListAsync();
+
+            return View(apps);
+        }
+
+        // GET: /Employer/ProcessManagement — Ön elemeden geçmiş, süreç devam eden başvurular
+        public async Task<IActionResult> ProcessManagement()
+        {
+            var user = await GetCurrentUserAsync();
+            if (user.CompanyId == null) return RedirectToAction(nameof(Index));
+
+            var apps = await _context.JobApplications
+                .Include(a => a.Student)
+                .Include(a => a.Company)
+                .Include(a => a.ToDos)
+                .Where(a => a.CompanyId == user.CompanyId.Value &&
+                            a.Status >= ApplicationStatus.PreScreening &&
+                            a.Status != ApplicationStatus.Rejected)
                 .OrderByDescending(a => a.ApplicationDate)
                 .ToListAsync();
 
@@ -284,7 +303,10 @@ namespace CareerTrack.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Aşama başarıyla güncellendi ve öğrenciye bildirildi.";
-            return RedirectToAction(nameof(Applications));
+            // Yönlendirmeyi gelen sayfaya göre yap
+            if (status == ApplicationStatus.PreScreening || status == ApplicationStatus.Rejected)
+                return RedirectToAction(nameof(Applications));
+            return RedirectToAction(nameof(ProcessManagement));
         }
 
         // POST: /Employer/EvaluateApplication
@@ -325,7 +347,7 @@ namespace CareerTrack.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Değerlendirme sonuçları başarıyla kaydedildi.";
-            return RedirectToAction(nameof(Applications));
+            return RedirectToAction(nameof(ProcessManagement));
         }
 
 

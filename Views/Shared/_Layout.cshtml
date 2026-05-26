@@ -157,6 +157,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link @(currentController == "Employer" && currentAction == "ProcessManagement" ? "active" : "")"
+                           asp-controller="Employer" asp-action="ProcessManagement">
+                            <i class="bi bi-diagram-3-fill"></i> Süreç Yönetimi
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link @(currentController == "Employer" && currentAction == "Tasks" ? "active" : "")"
                            asp-controller="Employer" asp-action="Tasks">
                             <i class="bi bi-list-check"></i> Görev Yönetimi

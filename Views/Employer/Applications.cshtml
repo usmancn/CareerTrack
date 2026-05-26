@@ -1,11 +1,19 @@
 @model List<CareerTrack.Models.Entities.JobApplication>
 @using CareerTrack.Models.Enums
 @{
-    ViewData["Title"] = "Gelen Başvurular";
+    ViewData["Title"] = "Yeni Başvurular";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0"><i class="bi bi-people me-2"></i>Şirketinize Gelen Başvurular</h4>
+    <h4 class="mb-0"><i class="bi bi-inbox-fill me-2 text-primary"></i>Yeni Gelen Başvurular <span class="badge bg-primary ms-2">Ön Eleme Kararı Verin</span></h4>
+    <a asp-action="ProcessManagement" class="btn btn-outline-primary btn-sm rounded-pill">
+        <i class="bi bi-diagram-3 me-1"></i> Süreç Yönetimi →
+    </a>
+</div>
+
+<div class="alert mb-4 border-0 rounded-4 py-3 px-4" style="background: rgba(67,97,238,0.07); border-left: 4px solid var(--primary) !important;">
+    <i class="bi bi-info-circle-fill me-2 text-primary"></i>
+    <span class="text-secondary small">Bu sayfada yalnızca <strong class="text-white">yeni başvuranlar</strong> görünmektedir. Her aday için <strong class="text-info">Ön Elemeye Al</strong> veya <strong class="text-danger">Reddet</strong> kararı verebilirsiniz. Ön elemeyi geçen adaylar <strong>"Süreç Yönetimi"</strong> sekmesine taşınır.</span>
 </div>
 
 @if (Model.Any())
@@ -18,9 +26,8 @@
                     <th>Bölüm</th>
                     <th>Pozisyon</th>
                     <th>Başvuru Tarihi</th>
-                    <th>Aşama Durumu</th>
-                    <th>Öğrenci Görev Durumu</th>
-                    <th class="text-end">İşlemler</th>
+                    <th>Staj Türü</th>
+                    <th class="text-end">Ön Eleme Kararı</th>
                 </tr>
             </thead>
             <tbody>
@@ -31,89 +38,30 @@
                         <td class="text-muted small">@app.Student?.Department</td>
                         <td>@app.Position</td>
                         <td>@app.ApplicationDate.ToString("dd.MM.yyyy")</td>
-                        @{
-                            string statusText = app.Status switch
-                            {
-                                ApplicationStatus.Pending => "Yeni Başvuru",
-                                ApplicationStatus.PreScreening => "Ön Eleme",
-                                ApplicationStatus.AptitudeTest => "Genel Yetenek Testi",
-                                ApplicationStatus.LanguageTest => "İngilizce Sınavı",
-                                ApplicationStatus.Interview => "Mülakat",
-                                ApplicationStatus.EmployerAccepted => "Okul Onayı Bekleniyor",
-                                ApplicationStatus.SchoolPending => "Okul İncelemesinde",
-                                ApplicationStatus.SchoolRevision => "Okul Revize İstedi",
-                                ApplicationStatus.SchoolApproved => "Staj Devam Ediyor",
-                                ApplicationStatus.Rejected => "Reddedildi",
-                                ApplicationStatus.Completed => "Staj Tamamlandı",
-                                _ => app.Status.ToString()
-                            };
-
-                            string badgeClass = app.Status switch
-                            {
-                                ApplicationStatus.Pending => "bg-secondary",
-                                ApplicationStatus.PreScreening => "bg-info text-dark",
-                                ApplicationStatus.AptitudeTest => "bg-primary",
-                                ApplicationStatus.LanguageTest => "bg-primary",
-                                ApplicationStatus.Interview => "bg-info",
-                                ApplicationStatus.EmployerAccepted => "bg-warning text-dark",
-                                ApplicationStatus.SchoolApproved => "bg-success",
-                                ApplicationStatus.Rejected => "bg-danger",
-                                ApplicationStatus.Completed => "bg-success",
-                                _ => "bg-secondary"
-                            };
-                        }
-                        <td>
-                            <span class="badge @badgeClass">@statusText</span>
-                        </td>
-                        @{
-                            var canUpdate = app.Status != ApplicationStatus.EmployerAccepted &&
-                                            app.Status != ApplicationStatus.SchoolApproved &&
-                                            app.Status != ApplicationStatus.Rejected;
-                                
-                            var latestTodo = app.ToDos?.OrderByDescending(t => t.Id).FirstOrDefault();
-                            var isStudentPending = latestTodo != null && !latestTodo.IsCompleted;
-                            var isStudentDone = latestTodo != null && latestTodo.IsCompleted;
-                        }
-
-                        <td>
-                            @if (isStudentPending)
-                            {
-                                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Öğrenci Bekleniyor</span>
-                            }
-                            else if (isStudentDone)
-                            {
-                                <span class="badge bg-success"><i class="bi bi-check-all me-1"></i>Öğrenci Tamamladı</span>
-                            }
-                            else
-                            {
-                                <span class="text-muted small">-</span>
-                            }
-                        </td>
+                        <td><span class="badge bg-secondary">@app.InternshipType</span></td>
                         <td class="text-end">
-                            @if (canUpdate)
-                            {
-                                <div class="d-flex gap-1 justify-content-end flex-wrap">
-                                    @if (!isStudentPending)
-                                    {
-                                        <button class="btn btn-sm btn-outline-primary" title="Mevcut Aşamayı Değerlendir"
-                                                onclick="openEvaluateDrawer(@app.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(statusText))')">
-                                            <i class="bi bi-clipboard-check"></i> Değerlendir
-                                        </button>
-                                    }
-                                    <button class="btn btn-sm btn-outline-secondary" title="Sonraki Aşamaya Taşı"
-                                            onclick="openUpdateStageDrawer(@app.Id, @((int)app.Status), '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(statusText))')">
-                                        <i class="bi bi-arrow-right-circle"></i> Aşama
+                            <div class="d-flex gap-2 justify-content-end">
+                                <!-- Ön Elemeye Al -->
+                                <form asp-action="UpdateApplicationStatus" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@app.Id" />
+                                    <input type="hidden" name="status" value="@((int)ApplicationStatus.PreScreening)" />
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3"
+                                            onclick="return confirm('@app.Student?.FullName adlı adayı Ön Elemeye almak istediğinize emin misiniz?')">
+                                        <i class="bi bi-check-circle me-1"></i> Ön Elemeye Al
                                     </button>
-                                </div>
-                            }
-                            else if (app.Status == ApplicationStatus.SchoolApproved)
-                            {
-                                <span class="text-success small"><i class="bi bi-check-circle me-1"></i>Staj Devam Ediyor</span>
-                            }
-                            else
-                            {
-                                <span class="text-muted small">İşlem Kapalı</span>
-                            }
+                                </form>
+                                <!-- Reddet -->
+                                <form asp-action="UpdateApplicationStatus" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@app.Id" />
+                                    <input type="hidden" name="status" value="@((int)ApplicationStatus.Rejected)" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                            onclick="return confirm('@app.Student?.FullName adlı adayı reddetmek istediğinize emin misiniz?')">
+                                        <i class="bi bi-x-circle me-1"></i> Reddet
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 }
@@ -123,139 +71,9 @@
 }
 else
 {
-    <div class="card border-0 shadow-sm">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-inbox fs-1 text-muted"></i>
-            <h5 class="mt-3 text-muted">Henüz şirketinize başvuru yapılmamış</h5>
-            <p class="text-muted small">Öğrenciler aktif ilanlarınıza başvurduğunda burada görünecek.</p>
-        </div>
+    <div class="table-card text-center py-5">
+        <i class="bi bi-inbox fs-1 text-muted opacity-50 d-block mb-3"></i>
+        <h5 class="text-muted">Bekleyen yeni başvuru yok</h5>
+        <p class="text-muted small">Tüm başvurular değerlendirilmiş. Süreç devam eden adayları <a asp-action="ProcessManagement" class="text-primary">Süreç Yönetimi</a> sekmesinden takip edebilirsiniz.</p>
     </div>
-}
-
-
-<!-- Mevcut Aşamayı Değerlendirme Yan Paneli -->
-<div id="evaluateDrawer" class="premium-drawer">
-    <div class="drawer-overlay" onclick="closePremiumDrawer('evaluateDrawer')"></div>
-    <div class="drawer-content">
-        <div class="drawer-header">
-            <span class="drawer-title"><i class="bi bi-clipboard-data me-2 text-primary"></i>Öğrenciyi Değerlendir</span>
-            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('evaluateDrawer')">
-                <i class="bi bi-x"></i>
-            </button>
-        </div>
-        <div class="drawer-body">
-            <form asp-action="EvaluateApplication" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="evAppId" />
-                
-                <div class="mb-4">
-                    <p class="text-muted small mb-1">Öğrenci: <strong id="evStudentName" class="text-white"></strong></p>
-                    <p class="text-muted small mb-0">Değerlendirilen Aşama: <span id="evStageText" class="badge bg-primary"></span></p>
-                </div>
-                
-                <div class="alert alert-info py-2 small mb-4" style="background: rgba(13, 202, 240, 0.05); border: 1px solid rgba(13, 202, 240, 0.15);">
-                    <i class="bi bi-info-circle me-1 text-info"></i>
-                    <span class="text-secondary">Bu alanda sadece <strong>mevcut aşamanın</strong> (Sınav, Mülakat vb.) değerlendirme notlarını girersiniz. Öğrenciyi sonraki aşamaya taşımak için "Aşama" butonunu kullanın.</span>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <label class="form-label fw-bold">Sınav / Aşama Sonucu</label>
-                        <select name="evaluationResult" class="form-select glass-input">
-                            <option value="">Belirtme</option>
-                            <option value="Başarılı (Geçti)">Başarılı (Geçti)</option>
-                            <option value="Başarısız (Kaldı)">Başarısız (Kaldı)</option>
-                        </select>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label fw-bold">Puan (100 üzerinden)</label>
-                        <input type="number" name="score" class="form-control glass-input" min="0" max="100" placeholder="Örn: 85" />
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Değerlendirme Notu (Opsiyonel)</label>
-                    <textarea name="employerNote" class="form-control glass-input" rows="3" placeholder="Örn: Mülakatta teknik bilgisi çok iyiydi."></textarea>
-                </div>
-                
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('evaluateDrawer')">İptal</button>
-                    <button type="submit" class="btn btn-primary flex-fill">
-                        <i class="bi bi-check-circle me-1"></i>Değerlendirmeyi Kaydet
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Sonraki Aşamaya Taşı Yan Paneli -->
-<div id="updateStageDrawer" class="premium-drawer">
-    <div class="drawer-overlay" onclick="closePremiumDrawer('updateStageDrawer')"></div>
-    <div class="drawer-content">
-        <div class="drawer-header">
-            <span class="drawer-title"><i class="bi bi-arrow-right-circle me-2 text-success"></i>Aşama İlerlet</span>
-            <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('updateStageDrawer')">
-                <i class="bi bi-x"></i>
-            </button>
-        </div>
-        <div class="drawer-body">
-            <form asp-action="UpdateApplicationStatus" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="usAppId" />
-                
-                <div class="mb-4">
-                    <p class="text-muted small mb-1">Öğrenci: <strong id="usStudentName" class="text-white"></strong></p>
-                    <p class="text-muted small mb-0">Mevcut Aşama: <span id="usStageText" class="badge bg-secondary"></span></p>
-                </div>
-                
-                <div class="mb-4 p-3 rounded glass-panel" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border);">
-                    <label class="form-label fw-bold text-success">Öğrenciyi Hangi Aşamaya Alacaksınız?</label>
-                    <select name="status" id="usStatus" class="form-select glass-input border-success">
-                        <option value="@((int)ApplicationStatus.Pending)">Beklemede</option>
-                        <option value="@((int)ApplicationStatus.PreScreening)">Ön Eleme</option>
-                        <option value="@((int)ApplicationStatus.AptitudeTest)">Genel Yetenek Testi</option>
-                        <option value="@((int)ApplicationStatus.LanguageTest)">İngilizce Sınavı</option>
-                        <option value="@((int)ApplicationStatus.Interview)">Mülakat</option>
-                        <option value="@((int)ApplicationStatus.EmployerAccepted)">✓ Kabul Et (Okul'a Gönder)</option>
-                        <option value="@((int)ApplicationStatus.Rejected)">✗ Reddet</option>
-                    </select>
-                    <small class="text-muted mt-2 d-block">
-                        <i class="bi bi-bell"></i> Seçtiğiniz aşamaya göre öğrenciye <b>görev (sınava gir vb.)</b> bildirimi gidecektir.
-                    </small>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Öğrenciye Not (Opsiyonel)</label>
-                    <textarea name="employerNote" class="form-control glass-input" rows="3" placeholder="Örn: Mülakat linki yakında gönderilecek."></textarea>
-                </div>
-                
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('updateStageDrawer')">İptal</button>
-                    <button type="submit" class="btn btn-success flex-fill text-dark fw-bold">
-                        <i class="bi bi-arrow-right me-1"></i>Sonraki Aşamaya Taşı
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-    <script>
-        function openEvaluateDrawer(appId, studentName, stageText) {
-            document.getElementById('evAppId').value = appId;
-            document.getElementById('evStudentName').textContent = studentName;
-            document.getElementById('evStageText').textContent = stageText;
-            window.openPremiumDrawer('evaluateDrawer');
-        }
-
-        function openUpdateStageDrawer(appId, currentStatus, studentName, stageText) {
-            document.getElementById('usAppId').value = appId;
-            document.getElementById('usStatus').value = currentStatus;
-            document.getElementById('usStudentName').textContent = studentName;
-            document.getElementById('usStageText').textContent = stageText;
-            window.openPremiumDrawer('updateStageDrawer');
-        }
-    </script>
 }
