@@ -60,13 +60,30 @@ namespace CareerTrack.Controllers
                 PendingCompanyList = await _context.Companies
                     .Where(c => !c.IsApproved)
                     .OrderBy(c => c.Name)
-                    .ToListAsync(),
-
-                ApplicationStatusStats = await _context.JobApplications
-                    .GroupBy(a => a.Status)
-                    .Select(g => new { Status = g.Key.ToString(), Count = g.Count() })
-                    .ToDictionaryAsync(k => k.Status, v => v.Count)
+                    .ToListAsync()
             };
+
+            var rawStats = await _context.JobApplications
+                .GroupBy(a => a.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            vm.ApplicationStatusStats = rawStats.ToDictionary(
+                k => k.Status switch {
+                    ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                    ApplicationStatus.SchoolRevision => "Revize İstendi",
+                    ApplicationStatus.SchoolApproved => "Okul Onaylı",
+                    ApplicationStatus.PreScreening => "Ön Eleme",
+                    ApplicationStatus.AptitudeTest => "Yetenek Testi",
+                    ApplicationStatus.LanguageTest => "Dil Sınavı",
+                    ApplicationStatus.Interview => "Mülakat",
+                    ApplicationStatus.EmployerAccepted => "Kabul Edildi",
+                    ApplicationStatus.Rejected => "Reddedildi",
+                    ApplicationStatus.Completed => "Tamamlandı",
+                    _ => k.Status.ToString()
+                },
+                v => v.Count
+            );
 
             return View(vm);
         }

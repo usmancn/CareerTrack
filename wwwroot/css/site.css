@@ -694,7 +694,7 @@ h1, h2, h3, h4, h5, h6, .welcome-title, .header-title, .brand-logo {
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
-    overflow: hidden;
+    overflow: visible; /* Changed from hidden to prevent dropdown clipping */
 }
 .table {
     margin-bottom: 0 !important;
