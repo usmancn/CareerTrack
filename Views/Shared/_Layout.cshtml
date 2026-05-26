@@ -112,8 +112,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(currentController == "School" && currentAction == "StudentDetail" ? "active" : "")"
-                           asp-controller="School" asp-action="Index" asp-fragment="ogrenci-listesi">
+                        <a class="nav-link @(currentController == "School" && (currentAction == "StudentDetail" || currentAction == "Students") ? "active" : "")"
+                           asp-controller="School" asp-action="Students">
                             <i class="bi bi-person-lines-fill"></i> Öğrenci Takibi
                         </a>
                     </li>
@@ -142,6 +142,18 @@
                         <a class="nav-link @(currentController == "Employer" && currentAction == "Applications" ? "active" : "")"
                            asp-controller="Employer" asp-action="Applications">
                             <i class="bi bi-people-fill"></i> Başvurular
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "Employer" && currentAction == "Tasks" ? "active" : "")"
+                           asp-controller="Employer" asp-action="Tasks">
+                            <i class="bi bi-list-check"></i> Görev Yönetimi
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "Employer" && currentAction == "DailyLogs" ? "active" : "")"
+                           asp-controller="Employer" asp-action="DailyLogs">
+                            <i class="bi bi-journal-text"></i> Öğrenci Günlükleri
                         </a>
                     </li>
                 }

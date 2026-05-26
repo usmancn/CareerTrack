@@ -36,14 +36,7 @@ namespace CareerTrack.Controllers
                 TotalSchools = schoolUsers.Count,
                 TotalUsers = studentUsers.Count + employerUsers.Count + schoolUsers.Count,
 
-                TotalApplications = await _context.JobApplications.CountAsync(),
-                TotalOffered = await _context.JobApplications
-                    .CountAsync(a => a.Status == Models.Enums.ApplicationStatus.Offered),
-                PendingApplications = await _context.JobApplications
-                    .CountAsync(a => a.Status == Models.Enums.ApplicationStatus.Pending),
 
-                PendingDailyLogs = await _context.DailyLogs.CountAsync(d => !d.IsApprovedByAdmin),
-                TotalDailyLogs = await _context.DailyLogs.CountAsync(),
 
                 TotalCompanies = await _context.Companies.CountAsync(),
                 PendingCompanies = await _context.Companies.CountAsync(c => !c.IsApproved),
@@ -156,31 +149,63 @@ namespace CareerTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        // GET: /Admin/CreateUser
+        public IActionResult CreateUser()
+        {
+            return View(new AdminCreateUserViewModel());
+        }
+
+        // POST: /Admin/CreateUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateUser(AdminCreateUserViewModel vm)
+        {
+            if (!ModelState.IsValid) return View(vm);
+
+            var userExists = await _userManager.FindByEmailAsync(vm.Email);
+            if (userExists != null)
+            {
+                ModelState.AddModelError("Email", "Bu e-posta adresine sahip bir kullanıcı zaten var.");
+                return View(vm);
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = vm.Email,
+                Email = vm.Email,
+                FullName = vm.FullName,
+                Department = vm.Department
+            };
+
+            var result = await _userManager.CreateAsync(user, vm.Password);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View(vm);
+            }
+
+            // Assign role
+            if (AppRoles.All.Contains(vm.Role))
+            {
+                await _userManager.AddToRoleAsync(user, vm.Role);
+            }
+
+            TempData["Success"] = $"{vm.FullName} adlı kullanıcı başarıyla oluşturuldu ve {AppRoles.DisplayName(vm.Role)} rolü atandı.";
+            return RedirectToAction(nameof(Users));
+        }
+
         // GET: /Admin/DailyLogs
         public async Task<IActionResult> DailyLogs()
         {
             var logs = await _context.DailyLogs
                 .Include(d => d.Student)
-                .OrderBy(d => d.IsApprovedByAdmin)
+                .OrderBy(d => d.Status)
                 .ThenByDescending(d => d.LogDate)
                 .ToListAsync();
             return View(logs);
-        }
-
-        // POST: /Admin/ApproveLog/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveLog(int id, string? adminNote, bool approve)
-        {
-            var log = await _context.DailyLogs.FindAsync(id);
-            if (log == null) return NotFound();
-
-            log.IsApprovedByAdmin = approve;
-            log.AdminNote = adminNote;
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = approve ? "Günlük onaylandı." : "Günlük 'Revize Gerekli' olarak işaretlendi.";
-            return RedirectToAction(nameof(DailyLogs));
         }
 
         // GET: /Admin/Applications
@@ -189,7 +214,6 @@ namespace CareerTrack.Controllers
             var apps = await _context.JobApplications
                 .Include(a => a.Company)
                 .Include(a => a.Student)
-                .Include(a => a.Interviews)
                 .OrderByDescending(a => a.ApplicationDate)
                 .ToListAsync();
             return View(apps);
@@ -208,10 +232,16 @@ namespace CareerTrack.Controllers
 
             var statusText = status switch
             {
-                ApplicationStatus.Pending => "Bekliyor",
-                ApplicationStatus.InReview => "Değerlendirmede",
+                ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                ApplicationStatus.SchoolRevision => "Okul Revize İstedi",
+                ApplicationStatus.SchoolApproved => "Okul Onaylı",
+                ApplicationStatus.PreScreening => "Ön Eleme",
+                ApplicationStatus.AptitudeTest => "Genel Yetenek Testi",
+                ApplicationStatus.LanguageTest => "İngilizce Sınavı",
+                ApplicationStatus.Interview => "Mülakat",
+                ApplicationStatus.EmployerAccepted => "Kabul Edildi",
                 ApplicationStatus.Rejected => "Reddedildi",
-                ApplicationStatus.Offered => "Teklif Gönderildi",
+                ApplicationStatus.Completed => "Tamamlandı",
                 _ => status.ToString()
             };
 

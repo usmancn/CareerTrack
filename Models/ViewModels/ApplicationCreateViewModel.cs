@@ -25,8 +25,19 @@ namespace CareerTrack.Models.ViewModels
         [Display(Name = "Staj Türü")]
         public InternshipType InternshipType { get; set; } = InternshipType.MandatoryShort;
 
+        [DataType(DataType.Date)]
+        [Display(Name = "Staj Başlangıç Tarihi")]
+        public DateTime? InternshipStartDate { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "Staj Bitiş Tarihi")]
+        public DateTime? InternshipEndDate { get; set; }
+
+        [Display(Name = "Toplam Staj Günü")]
+        public int? TotalInternshipDays { get; set; }
+
         [Display(Name = "Durum")]
-        public ApplicationStatus Status { get; set; } = ApplicationStatus.Pending;
+        public ApplicationStatus Status { get; set; } = ApplicationStatus.SchoolPending;
 
         // Dropdown için
         public SelectList? Companies { get; set; }

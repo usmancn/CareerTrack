@@ -10,11 +10,22 @@
     <div class="form-card-body">
         <form asp-action="@(Model.Id == 0 ? "Create" : "Edit")" asp-route-id="@Model.Id" method="post">
             @Html.AntiForgeryToken()
-            @if (Model.Id != 0) { <input type="hidden" asp-for="Id" /> }
+            @if (Model.Id != 0) 
+            { 
+                <input type="hidden" asp-for="Id" /> 
+            }
 
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
             <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="JobApplicationId" class="form-label"></label>
+                    <select asp-for="JobApplicationId" class="form-select" asp-items="Model.Applications">
+                        <option value="">-- Staj Seçiniz --</option>
+                    </select>
+                    <span asp-validation-for="JobApplicationId" class="text-danger small"></span>
+                </div>
+
                 <div class="col-md-4">
                     <label asp-for="DayNumber" class="form-label"></label>
                     <input asp-for="DayNumber" class="form-control" type="number" min="1" max="365" placeholder="14" />

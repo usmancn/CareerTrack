@@ -10,11 +10,10 @@ namespace CareerTrack.Data
 
         public DbSet<Company> Companies { get; set; }
         public DbSet<JobApplication> JobApplications { get; set; }
-        public DbSet<Interview> Interviews { get; set; }
-        public DbSet<Offer> Offers { get; set; }
         public DbSet<DailyLog> DailyLogs { get; set; }
         public DbSet<ToDo> ToDos { get; set; }
         public DbSet<JobPosting> JobPostings { get; set; }
+        public DbSet<StudentTask> StudentTasks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -34,26 +33,33 @@ namespace CareerTrack.Data
                 .HasForeignKey(a => a.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Interview → JobApplication (1-N)
-            builder.Entity<Interview>()
-                .HasOne(i => i.JobApplication)
-                .WithMany(a => a.Interviews)
-                .HasForeignKey(i => i.JobApplicationId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Offer → JobApplication (1-1)
-            builder.Entity<Offer>()
-                .HasOne(o => o.JobApplication)
-                .WithOne(a => a.Offer)
-                .HasForeignKey<Offer>(o => o.JobApplicationId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             // DailyLog → ApplicationUser
             builder.Entity<DailyLog>()
                 .HasOne(d => d.Student)
                 .WithMany(u => u.DailyLogs)
                 .HasForeignKey(d => d.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // DailyLog → JobApplication
+            builder.Entity<DailyLog>()
+                .HasOne(d => d.JobApplication)
+                .WithMany()
+                .HasForeignKey(d => d.JobApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // StudentTask → JobApplication
+            builder.Entity<StudentTask>()
+                .HasOne(t => t.JobApplication)
+                .WithMany()
+                .HasForeignKey(t => t.JobApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // StudentTask → ApplicationUser (Employer)
+            builder.Entity<StudentTask>()
+                .HasOne(t => t.AssignedByEmployer)
+                .WithMany()
+                .HasForeignKey(t => t.AssignedByEmployerId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ToDo → ApplicationUser
             builder.Entity<ToDo>()
@@ -77,6 +83,14 @@ namespace CareerTrack.Data
                 .HasOne(c => c.CreatedBy)
                 .WithMany()
                 .HasForeignKey(c => c.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // Company → Employer (Şirketi ekleyen işveren)
+            builder.Entity<Company>()
+                .HasOne(c => c.Employer)
+                .WithMany()
+                .HasForeignKey(c => c.EmployerId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
 

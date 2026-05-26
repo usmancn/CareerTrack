@@ -10,7 +10,10 @@
     <div class="form-card-body">
         <form asp-action="@(Model.Id == 0 ? "Create" : "Edit")" method="post">
             @Html.AntiForgeryToken()
-            @if (Model.Id != 0) { <input type="hidden" asp-for="Id" /> }
+            @if (Model.Id != 0) 
+            { 
+                <input type="hidden" asp-for="Id" /> 
+            }
 
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
@@ -34,23 +37,16 @@
                     <span asp-validation-for="Position" class="text-danger small"></span>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label asp-for="ApplicationDate" class="form-label"></label>
                     <input asp-for="ApplicationDate" class="form-control" type="date" />
                     <span asp-validation-for="ApplicationDate" class="text-danger small"></span>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label asp-for="InternshipType" class="form-label"></label>
                     <select asp-for="InternshipType" class="form-select"
                             asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.InternshipType>()">
-                    </select>
-                </div>
-
-                <div class="col-md-4">
-                    <label asp-for="Status" class="form-label"></label>
-                    <select asp-for="Status" class="form-select"
-                            asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.ApplicationStatus>()">
                     </select>
                 </div>
             </div>

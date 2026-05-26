@@ -6,6 +6,10 @@ namespace CareerTrack.Models.ViewModels
     {
         public int Id { get; set; }
 
+        [Required(ErrorMessage = "Hangi staj için olduğunu seçiniz.")]
+        [Display(Name = "Staj / İşveren")]
+        public int JobApplicationId { get; set; }
+
         [Required(ErrorMessage = "Gün numarası zorunludur.")]
         [Range(1, 365, ErrorMessage = "Gün numarası 1-365 arasında olmalıdır.")]
         [Display(Name = "Gün Numarası (Örn: 14)")]
@@ -21,5 +25,8 @@ namespace CareerTrack.Models.ViewModels
             ErrorMessage = "Günlük içeriği en az 100 karakter olmalıdır. Lütfen daha ayrıntılı yazınız.")]
         [Display(Name = "Bugün Neler Yaptınız?")]
         public string Content { get; set; } = string.Empty;
+
+        // Dropdown için
+        public Microsoft.AspNetCore.Mvc.Rendering.SelectList? Applications { get; set; }
     }
 }

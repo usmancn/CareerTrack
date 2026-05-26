@@ -37,5 +37,9 @@ namespace CareerTrack.Models.Entities
         public ApplicationUser? CreatedBy { get; set; }
         public ICollection<JobApplication> JobApplications { get; set; } = new List<JobApplication>();
         public ICollection<JobPosting> JobPostings { get; set; } = new List<JobPosting>();
+        
+        // Şirketi sisteme ekleyen işveren (Employer rolündeki kullanıcı)
+        public string? EmployerId { get; set; }
+        public ApplicationUser? Employer { get; set; }
     }
 }

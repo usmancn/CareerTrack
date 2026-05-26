@@ -18,6 +18,10 @@ namespace CareerTrack.Models.ViewModels
         [Display(Name = "Bölüm / Departman")]
         public string? Department { get; set; }
 
+        [Required(ErrorMessage = "Hesap türü seçimi zorunludur.")]
+        [Display(Name = "Hesap Türü")]
+        public string Role { get; set; } = "Student";
+
         [Required(ErrorMessage = "Şifre zorunludur.")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Şifre en az 6 karakter olmalıdır.")]
         [DataType(DataType.Password)]

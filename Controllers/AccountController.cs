@@ -71,6 +71,14 @@ namespace CareerTrack.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
+            // Sadece Öğrenci ve İşveren kaydı açık
+            var allowedRoles = new[] { AppRoles.Student, AppRoles.Employer };
+            if (!allowedRoles.Contains(model.Role))
+            {
+                ModelState.AddModelError(nameof(model.Role), "Geçersiz hesap türü seçildi.");
+                return View(model);
+            }
+
             var user = new ApplicationUser
             {
                 UserName = model.Email,
@@ -83,8 +91,12 @@ namespace CareerTrack.Controllers
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(user, AppRoles.Student);
+                await _userManager.AddToRoleAsync(user, model.Role);
                 await _signInManager.SignInAsync(user, isPersistent: false);
+
+                if (model.Role == AppRoles.Employer)
+                    return RedirectToAction("Index", "Employer");
+
                 return RedirectToAction("Index", "Dashboard");
             }
 

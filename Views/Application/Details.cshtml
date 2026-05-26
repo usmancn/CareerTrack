@@ -11,10 +11,16 @@
         </div>
         <span class="status-badge status-@Model.Status.ToString().ToLower() fs-6">
             @(Model.Status switch {
-                ApplicationStatus.Pending => "Bekliyor",
-                ApplicationStatus.InReview => "İncelemede",
-                ApplicationStatus.Offered => "Teklif Alındı ✓",
+                ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                ApplicationStatus.SchoolRevision => "Revize İstendi",
+                ApplicationStatus.SchoolApproved => "Okul Onaylı",
+                ApplicationStatus.PreScreening => "Ön Eleme",
+                ApplicationStatus.AptitudeTest => "Test",
+                ApplicationStatus.LanguageTest => "Dil Sınavı",
+                ApplicationStatus.Interview => "Mülakat",
+                ApplicationStatus.EmployerAccepted => "Kabul Edildi",
                 ApplicationStatus.Rejected => "Reddedildi",
+                ApplicationStatus.Completed => "Tamamlandı",
                 _ => Model.Status.ToString()
             })
         </span>
@@ -46,82 +52,47 @@
         </div>
     </div>
 
-    <!-- Mülakatlar -->
-    <div class="section-header">
-        <span><i class="bi bi-mic me-2"></i>Mülakat Aşamaları</span>
-        <a asp-controller="Interview" asp-action="Create" asp-route-applicationId="@Model.Id"
-           class="btn btn-sm btn-primary">+ Mülakat Ekle</a>
-    </div>
-
-    @if (!Model.Interviews.Any())
-    {
-        <p class="text-muted">Henüz mülakat eklenmedi.</p>
-    }
-    else
-    {
-        <div class="table-card">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr><th>Tarih</th><th>Aşama</th><th>Sonuç</th><th>Notlar</th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var iv in Model.Interviews.OrderBy(i => i.InterviewDate))
-                    {
-                        <tr>
-                            <td>@iv.InterviewDate.ToString("dd.MM.yyyy")</td>
-                            <td>@(iv.Stage switch {
-                                InterviewStage.AptitudeTest => "Genel Yetenek Testi",
-                                InterviewStage.LanguageTest => "Yabancı Dil Sınavı",
-                                InterviewStage.HRInterview => "İK Mülakatı",
-                                InterviewStage.TechnicalInterview => "Teknik Mülakat",
-                                _ => iv.Stage.ToString()
-                            })</td>
-                            <td>
-                                <span class="badge @(iv.ResultStatus == InterviewResult.Passed ? "bg-success" : iv.ResultStatus == InterviewResult.Failed ? "bg-danger" : "bg-warning text-dark")">
-                                    @(iv.ResultStatus switch {
-                                        InterviewResult.Passed => "Geçti ✓",
-                                        InterviewResult.Failed => "Kaldı",
-                                        _ => "Bekleniyor"
-                                    })
-                                </span>
-                            </td>
-                            <td>@(iv.Notes ?? "-")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-
-    <!-- Teklif -->
-    @if (Model.Status == ApplicationStatus.Offered && Model.Offer == null)
-    {
-        <div class="mt-4">
-            <a asp-controller="Offer" asp-action="Create" asp-route-applicationId="@Model.Id"
-               class="btn btn-success">
-                <i class="bi bi-trophy me-1"></i> Teklif Detaylarını Gir
-            </a>
-        </div>
-    }
-
-    @if (Model.Offer != null)
-    {
-        <div class="offer-box mt-4">
-            <h6><i class="bi bi-cash-coin me-2"></i>Teklif Detayları</h6>
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label>Maaş</label>
-                    <strong>@Model.Offer.Salary.ToString("N0") TL</strong>
-                </div>
-                <div class="col-md-5">
-                    <label>Yan Haklar</label>
-                    <strong>@(Model.Offer.Benefits ?? "-")</strong>
-                </div>
-                <div class="col-md-4">
-                    <label>Son Dönüş</label>
-                    <strong>@Model.Offer.DeadlineDate.ToString("dd.MM.yyyy")</strong>
+    <div class="row g-3 mb-4">
+        @if (Model.InternshipStartDate.HasValue)
+        {
+            <div class="col-md-4">
+                <div class="detail-item">
+                    <label>Başlangıç Tarihi</label>
+                    <span>@Model.InternshipStartDate.Value.ToString("dd MMMM yyyy")</span>
                 </div>
             </div>
+        }
+        @if (Model.InternshipEndDate.HasValue)
+        {
+            <div class="col-md-4">
+                <div class="detail-item">
+                    <label>Bitiş Tarihi</label>
+                    <span>@Model.InternshipEndDate.Value.ToString("dd MMMM yyyy")</span>
+                </div>
+            </div>
+        }
+        @if (Model.TotalInternshipDays.HasValue)
+        {
+            <div class="col-md-4">
+                <div class="detail-item">
+                    <label>Toplam Gün</label>
+                    <span>@Model.TotalInternshipDays.Value Gün</span>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SchoolNote))
+    {
+        <div class="alert alert-info mt-3">
+            <strong>Okul Notu:</strong> @Model.SchoolNote
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.EmployerNote))
+    {
+        <div class="alert alert-secondary mt-3">
+            <strong>İşveren Notu:</strong> @Model.EmployerNote
         </div>
     }
 

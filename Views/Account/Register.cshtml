@@ -13,6 +13,26 @@
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+            
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Hesap Türü</label>
+                <div class="d-flex gap-3">
+                    <div class="flex-fill">
+                        <input type="radio" class="btn-check" name="Role" id="roleStudent" value="Student" checked autocomplete="off" />
+                        <label class="btn btn-outline-primary w-100" for="roleStudent">
+                            <i class="bi bi-mortarboard-fill me-2"></i>Öğrenci
+                        </label>
+                    </div>
+                    <div class="flex-fill">
+                        <input type="radio" class="btn-check" name="Role" id="roleEmployer" value="Employer" autocomplete="off" />
+                        <label class="btn btn-outline-success w-100" for="roleEmployer">
+                            <i class="bi bi-building-fill me-2"></i>İşveren
+                        </label>
+                    </div>
+                </div>
+                <span asp-validation-for="Role" class="text-danger small"></span>
+            </div>
+
             <div class="mb-3">
                 <label asp-for="FullName" class="form-label"></label>
                 <div class="input-group">
@@ -31,7 +51,7 @@
                 <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
 
-            <div class="mb-3">
+            <div class="mb-3" id="departmentField">
                 <label asp-for="Department" class="form-label"></label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
@@ -57,6 +77,11 @@
                 <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
             </div>
 
+            <div id="employerNote" class="alert alert-info d-none py-2 small">
+                <i class="bi bi-info-circle me-1"></i>
+                İşveren hesabınız oluşturulduktan sonra profilinizden şirket bilgilerinizi tamamlayabilirsiniz.
+            </div>
+
             <button type="submit" class="btn btn-primary w-100 btn-auth">Kayıt Ol</button>
         </form>
 
@@ -67,4 +92,20 @@
 
 @section Scripts {
     <partial name="_ValidationScripts" />
+    <script>
+        const radios = document.querySelectorAll('input[name="Role"]');
+        const employerNote = document.getElementById('employerNote');
+        const deptField = document.getElementById('departmentField');
+
+        radios.forEach(r => r.addEventListener('change', function () {
+            if (this.value === 'Employer') {
+                employerNote.classList.remove('d-none');
+                deptField.querySelector('input').placeholder = 'İnsan Kaynakları / İK';
+            } else {
+                employerNote.classList.add('d-none');
+                deptField.querySelector('input').placeholder = 'Bilgisayar Mühendisliği';
+            }
+        }));
+    </script>
 }
+

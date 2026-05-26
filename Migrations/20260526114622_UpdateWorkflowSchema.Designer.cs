@@ -3,6 +3,7 @@ using System;
 using CareerTrack.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CareerTrack.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526114622_UpdateWorkflowSchema")]
+    partial class UpdateWorkflowSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
@@ -346,9 +349,6 @@ namespace CareerTrack.Migrations
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("JobApplicationId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("StudentId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -359,8 +359,6 @@ namespace CareerTrack.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("JobApplicationId");
 
                     b.HasIndex("StudentId");
 
@@ -600,17 +598,11 @@ namespace CareerTrack.Migrations
 
             modelBuilder.Entity("CareerTrack.Models.Entities.ToDo", b =>
                 {
-                    b.HasOne("CareerTrack.Models.Entities.JobApplication", "JobApplication")
-                        .WithMany("ToDos")
-                        .HasForeignKey("JobApplicationId");
-
                     b.HasOne("CareerTrack.Models.Entities.ApplicationUser", "Student")
                         .WithMany("ToDos")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("JobApplication");
 
                     b.Navigation("Student");
                 });
@@ -682,11 +674,6 @@ namespace CareerTrack.Migrations
                     b.Navigation("JobApplications");
 
                     b.Navigation("JobPostings");
-                });
-
-            modelBuilder.Entity("CareerTrack.Models.Entities.JobApplication", b =>
-                {
-                    b.Navigation("ToDos");
                 });
 #pragma warning restore 612, 618
         }

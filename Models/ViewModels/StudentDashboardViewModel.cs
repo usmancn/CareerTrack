@@ -13,7 +13,7 @@ namespace CareerTrack.Models.ViewModels
 
         // Ana veriler
         public List<JobApplication> ActiveApplications { get; set; } = new();
-        public List<Interview> UpcomingInterviews { get; set; } = new();
+        public List<StudentTask> UpcomingTasks { get; set; } = new();
         public List<ToDo> IncompleteToDos { get; set; } = new();
 
         // İstatistikler

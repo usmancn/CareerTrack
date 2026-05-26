@@ -24,7 +24,10 @@ namespace CareerTrack.Models.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        public int? JobApplicationId { get; set; }
+
         // Navigation Property
         public ApplicationUser? Student { get; set; }
+        public JobApplication? JobApplication { get; set; }
     }
 }

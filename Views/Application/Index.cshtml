@@ -1,89 +1,425 @@
-@model List<CareerTrack.Models.Entities.JobApplication>
+@model CareerTrack.Models.ViewModels.StudentApplicationIndexViewModel
+@using CareerTrack.Models.Enums
 @{
-    ViewData["Title"] = "Başvurularım";
+    ViewData["Title"] = "Staj Başvuruları";
 }
 
+<style>
+.stage-timeline { display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:8px 0 4px; }
+.stage-step { display:flex; flex-direction:column; align-items:center; flex:1; min-width:62px; position:relative; }
+.stage-step:not(:last-child)::after {
+    content:''; position:absolute; top:14px; left:56%; right:-44%;
+    height:2px; background:#dee2e6; z-index:0;
+}
+.stage-step.done:not(:last-child)::after { background:#198754; }
+.stage-dot {
+    width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:12px; border:2px solid #dee2e6; background:#f8f9fa; color:#adb5bd; position:relative; z-index:1;
+}
+.stage-step.done .stage-dot   { background:#198754; border-color:#198754; color:#fff; }
+.stage-step.active .stage-dot { background:#fff; border-color:#0d6efd; color:#0d6efd; box-shadow:0 0 0 3px rgba(13,110,253,.15); }
+.stage-label { font-size:9px; margin-top:4px; text-align:center; color:#6c757d; font-weight:500; line-height:1.2; }
+.stage-step.done .stage-label   { color:#198754; }
+.stage-step.active .stage-label { color:#0d6efd; font-weight:700; }
+.posting-card { transition:transform .18s,box-shadow .18s; border-radius:12px; }
+.posting-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.1)!important; }
+.stage-action-btn { font-size:12px; padding:5px 12px; border-radius:20px; animation:pulsebtn 2s infinite; }
+@@keyframes pulsebtn {
+    0%,100% { box-shadow:0 0 0 0 rgba(13,110,253,.3); }
+    50%      { box-shadow:0 0 0 5px rgba(13,110,253,0); }
+}
+</style>
+
+<!-- ── Tab Başlık ── -->
 <div class="page-toolbar">
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="bi bi-plus-circle me-1"></i> Yeni Başvuru
+    <ul class="nav nav-pills mb-0" id="appTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#postings">
+                <i class="bi bi-megaphone me-1"></i>Açık İlanlar
+                @if (Model.OpenPostings.Any())
+                {
+                    <span class="badge bg-primary ms-1">@Model.OpenPostings.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#myapps">
+                <i class="bi bi-send me-1"></i>Başvurularım
+                @if (Model.MyApplications.Any())
+                {
+                    <span class="badge bg-secondary ms-1">@Model.MyApplications.Count</span>
+                }
+            </button>
+        </li>
+    </ul>
+    <a asp-action="Create" class="btn btn-outline-primary ms-auto btn-sm">
+        <i class="bi bi-pencil-square me-1"></i>Manuel Başvuru
     </a>
 </div>
 
-@if (!Model.Any())
-{
-    <div class="empty-state-full">
-        <i class="bi bi-send-slash"></i>
-        <h5>Henüz başvuru eklemediniz</h5>
-        <a asp-action="Create" class="btn btn-primary mt-2">İlk Başvuruyu Ekle</a>
-    </div>
-}
-else
-{
-    <div class="table-card">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th>Şirket</th>
-                    <th>Pozisyon</th>
-                    <th>Başvuru Tarihi</th>
-                    <th>Staj Türü</th>
-                    <th>Durum</th>
-                    <th>Mülakatlar</th>
-                    <th class="text-end">İşlemler</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var app in Model)
+<div class="tab-content mt-3">
+
+    <!-- ══ AÇIK İLANLAR ══ -->
+    <div class="tab-pane fade show active" id="postings">
+        @if (!Model.OpenPostings.Any())
+        {
+            <div class="empty-state-full">
+                <i class="bi bi-megaphone-fill"></i>
+                <h5>Açık staj ilanı bulunmuyor</h5>
+                <p class="text-muted small">İşverenler ilan açtığında burada görünecek.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var posting in Model.OpenPostings)
                 {
-                    <tr>
-                        <td><strong>@app.Company?.Name</strong></td>
-                        <td>@app.Position</td>
-                        <td>@app.ApplicationDate.ToString("dd.MM.yyyy")</td>
-                        <td>
-                            <span class="badge bg-secondary">
-                                @(app.InternshipType switch {
-                                    InternshipType.Voluntary => "Gönüllü",
-                                    InternshipType.MandatoryShort => "Zorunlu Kısa",
-                                    InternshipType.LongTerm => "70 Gün",
-                                    _ => app.InternshipType.ToString()
-                                })
-                            </span>
-                        </td>
-                        <td>
-                            <span class="status-badge status-@app.Status.ToString().ToLower()">
-                                @(app.Status switch {
-                                    ApplicationStatus.Pending => "Bekliyor",
-                                    ApplicationStatus.InReview => "İncelemede",
-                                    ApplicationStatus.Offered => "Teklif ✓",
-                                    ApplicationStatus.Rejected => "Reddedildi",
-                                    _ => app.Status.ToString()
-                                })
-                            </span>
-                        </td>
-                        <td>
-                            <a asp-controller="Interview" asp-action="Index" asp-route-applicationId="@app.Id"
-                               class="btn btn-sm btn-outline-info">
-                                <i class="bi bi-mic me-1"></i>@app.Interviews.Count Mülakat
-                            </a>
-                        </td>
-                        <td class="text-end">
-                            <a asp-action="Details" asp-route-id="@app.Id" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a asp-action="Edit" asp-route-id="@app.Id" class="btn btn-sm btn-outline-warning">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <form asp-action="Delete" asp-route-id="@app.Id" method="post" class="d-inline"
-                                  onsubmit="return confirm('Bu başvuruyu silmek istediğinizden emin misiniz?')">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                    <i class="bi bi-trash"></i>
+                    var days = (int)(posting.EndDate - posting.StartDate).TotalDays;
+                    var desc = posting.Description.Length > 120 ? posting.Description[..120] + "…" : posting.Description;
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm posting-card">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex align-items-start mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3 flex-shrink-0"
+                                         style="width:44px;height:44px;">
+                                        <i class="bi bi-building text-primary fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0">@posting.Title</h6>
+                                        <small class="text-muted">@posting.Company?.Name</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-1 mb-3">
+                                    <span class="badge bg-light text-dark border" style="font-size:10px;">
+                                        <i class="bi bi-calendar2-range me-1"></i>@posting.StartDate.ToString("dd.MM") – @posting.EndDate.ToString("dd.MM.yy")
+                                    </span>
+                                    <span class="badge bg-light text-dark border" style="font-size:10px;">
+                                        <i class="bi bi-clock me-1"></i>@days gün
+                                    </span>
+                                    <span class="badge bg-light text-dark border" style="font-size:10px;">
+                                        <i class="bi bi-people me-1"></i>@posting.Quota kişi
+                                    </span>
+                                </div>
+                                <p class="text-muted small flex-grow-1 mb-3">@desc</p>
+                                <button class="btn btn-primary btn-sm w-100"
+                                        data-bs-toggle="modal" data-bs-target="#applyModal"
+                                        data-postingid="@posting.Id"
+                                        data-title="@posting.Title"
+                                        data-company="@posting.Company?.Name"
+                                        data-start="@posting.StartDate.ToString("dd.MM.yyyy")"
+                                        data-end="@posting.EndDate.ToString("dd.MM.yyyy")">
+                                    <i class="bi bi-send me-1"></i>Başvur
                                 </button>
-                            </form>
-                        </td>
-                    </tr>
+                            </div>
+                        </div>
+                    </div>
                 }
-            </tbody>
-        </table>
+            </div>
+        }
     </div>
+
+    <!-- ══ BAŞVURULARIM ══ -->
+    <div class="tab-pane fade" id="myapps">
+        @if (!Model.MyApplications.Any())
+        {
+            <div class="empty-state-full">
+                <i class="bi bi-send-slash"></i>
+                <h5>Henüz başvuru yapmadınız</h5>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3">
+                @foreach (var app in Model.MyApplications)
+                {
+                    var stBgClass = app.Status switch {
+                        ApplicationStatus.Pending          => "bg-secondary",
+                        ApplicationStatus.EmployerAccepted => "bg-warning text-dark",
+                        ApplicationStatus.SchoolApproved   => "bg-success",
+                        ApplicationStatus.SchoolRevision   => "bg-danger",
+                        ApplicationStatus.Rejected         => "bg-danger",
+                        ApplicationStatus.Completed        => "bg-dark",
+                        _                                  => "bg-info text-dark"
+                    };
+                    var stText = app.Status switch {
+                        ApplicationStatus.Pending          => "İşveren İnceliyor",
+                        ApplicationStatus.EmployerAccepted => "Okul Onayı Bekleniyor",
+                        ApplicationStatus.SchoolApproved   => "✓ Staj Onaylandı",
+                        ApplicationStatus.SchoolRevision   => "Okul Revize İstedi",
+                        ApplicationStatus.Rejected         => "✗ Reddedildi",
+                        ApplicationStatus.Completed        => "Tamamlandı",
+                        ApplicationStatus.PreScreening     => "Ön Eleme Aşaması",
+                        ApplicationStatus.AptitudeTest     => "Yetenek Testi Aşaması",
+                        ApplicationStatus.LanguageTest     => "Dil Sınavı Aşaması",
+                        ApplicationStatus.Interview        => "Mülakat Aşaması",
+                        _                                  => "Süreç Devam Ediyor"
+                    };
+                    var actionLabel = app.Status switch {
+                        ApplicationStatus.PreScreening => "Ön Eleme Formunu Aç",
+                        ApplicationStatus.AptitudeTest => "Yetenek Testine Gir",
+                        ApplicationStatus.LanguageTest => "İngilizce Sınavına Gir",
+                        ApplicationStatus.Interview    => "Mülakata Katıl",
+                        _                              => (string?)null
+                    };
+                    var actionIcon = app.Status switch {
+                        ApplicationStatus.PreScreening => "bi-clipboard-check",
+                        ApplicationStatus.AptitudeTest => "bi-pencil-square",
+                        ApplicationStatus.LanguageTest => "bi-translate",
+                        ApplicationStatus.Interview    => "bi-camera-video",
+                        _                              => "bi-play-circle"
+                    };
+                    bool showTimeline = app.Status >= ApplicationStatus.PreScreening
+                                     && app.Status <= ApplicationStatus.EmployerAccepted
+                                     && app.Status != ApplicationStatus.Rejected;
+
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="row align-items-center g-3">
+                                <!-- Şirket + Durum -->
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
+                                             style="width:40px;height:40px;">
+                                            <i class="bi bi-building text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@app.Company?.Name</div>
+                                            <small class="text-muted">@app.Position</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge @stBgClass small">@stText</span>
+                                    @if (!string.IsNullOrEmpty(app.EmployerNote))
+                                    {
+                                        <div class="mt-1 small text-muted">
+                                            <i class="bi bi-star me-1 text-warning"></i>@app.EmployerNote
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(app.SchoolNote))
+                                    {
+                                        <div class="mt-1 small text-warning-emphasis">
+                                            <i class="bi bi-info-circle me-1"></i>@app.SchoolNote
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Aşama Timeline -->
+                                <div class="col-md-5">
+                                    @if (showTimeline)
+                                    {
+                                        <div class="stage-timeline">
+                                            @foreach (var stStage in new[] {
+                                                (st: ApplicationStatus.PreScreening,     lb: "Ön Eleme",  ic: "bi-funnel"),
+                                                (st: ApplicationStatus.AptitudeTest,     lb: "G.Y. Test", ic: "bi-pencil-square"),
+                                                (st: ApplicationStatus.LanguageTest,     lb: "Dil Sınav", ic: "bi-translate"),
+                                                (st: ApplicationStatus.Interview,        lb: "Mülakat",   ic: "bi-mic"),
+                                                (st: ApplicationStatus.EmployerAccepted, lb: "Kabul",     ic: "bi-check-circle")
+                                            })
+                                            {
+                                                var cls = (int)app.Status > (int)stStage.st ? "done"
+                                                        : app.Status == stStage.st ? "active" : "";
+                                                <div class="stage-step @cls">
+                                                    <div class="stage-dot">
+                                                        @if ((int)app.Status > (int)stStage.st)
+                                                        {
+                                                            <i class="bi bi-check-lg" style="font-size:11px;"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi @stStage.ic" style="font-size:11px;"></i>
+                                                        }
+                                                    </div>
+                                                    <span class="stage-label">@stStage.lb</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else if (app.Status == ApplicationStatus.Pending)
+                                    {
+                                        <div class="text-muted small text-center py-2">
+                                            <i class="bi bi-hourglass-split me-1"></i>İşveren başvurunuzu inceliyor…
+                                        </div>
+                                    }
+                                    else if (app.Status == ApplicationStatus.Rejected)
+                                    {
+                                        <div class="text-danger small text-center py-2">
+                                            <i class="bi bi-x-circle me-1"></i>Bu başvuru sonuçlandı.
+                                        </div>
+                                    }
+                                    else if (app.Status == ApplicationStatus.SchoolApproved)
+                                    {
+                                        <div class="text-success small text-center py-2">
+                                            <i class="bi bi-check-circle me-1"></i>Tebrikler! Stajınız başladı.
+                                        </div>
+                                    }
+                                    else if (app.Status == ApplicationStatus.EmployerAccepted)
+                                    {
+                                        <div class="text-warning small text-center py-2">
+                                            <i class="bi bi-hourglass-split me-1"></i>Tüm aşamaları geçtiniz! Okul onayı bekleniyor.
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Aksiyon Butonları -->
+                                <div class="col-md-3 d-flex flex-column gap-2 text-end">
+                                    @if (actionLabel != null)
+                                    {
+                                        var isCompleted = app.ToDos?.OrderByDescending(t => t.Id).FirstOrDefault()?.IsCompleted == true;
+
+                                        if (isCompleted)
+                                        {
+                                            <button class="btn btn-success stage-action-btn w-100" disabled>
+                                                <i class="bi bi-check-all me-1"></i>Tamamlandı - İşveren Bekleniyor
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-primary stage-action-btn w-100"
+                                                    data-bs-toggle="modal" data-bs-target="#stageModal"
+                                                    data-appid="@app.Id"
+                                                    data-stage="@app.Status.ToString()"
+                                                    data-label="@actionLabel"
+                                                    data-company="@app.Company?.Name">
+                                                <i class="bi @actionIcon me-1"></i>@actionLabel
+                                            </button>
+                                        }
+                                    }
+                                    @if (app.Status == ApplicationStatus.SchoolApproved)
+                                    {
+                                        <a asp-controller="DailyLog" asp-action="Create" class="btn btn-success btn-sm w-100">
+                                            <i class="bi bi-journal-plus me-1"></i>Günlük Yaz
+                                        </a>
+                                    }
+                                    @if (app.Status == ApplicationStatus.Pending || app.Status == ApplicationStatus.SchoolRevision)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@app.Id" class="btn btn-sm btn-outline-warning w-100">
+                                            <i class="bi bi-pencil me-1"></i>Düzenle
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@app.Id" method="post"
+                                              onsubmit="return confirm('Başvuruyu silmek istiyor musunuz?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                                <i class="bi bi-trash me-1"></i>Sil
+                                            </button>
+                                        </form>
+                                    }
+                                    <a asp-action="Details" asp-route-id="@app.Id" class="btn btn-sm btn-outline-secondary w-100">
+                                        <i class="bi bi-eye me-1"></i>Detay
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ══ Başvur Modal ══ -->
+<div class="modal fade" id="applyModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 bg-primary text-white rounded-top-4">
+                <h5 class="modal-title"><i class="bi bi-send me-2"></i>Staj Başvurusu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="ApplyToPosting" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="postingId" id="applyPostingId" />
+                <div class="modal-body px-4 pt-4">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width:60px;height:60px;">
+                            <i class="bi bi-building text-primary fs-3"></i>
+                        </div>
+                        <h6 class="fw-bold mb-1" id="applyCompanyName"></h6>
+                        <p class="text-muted mb-0" id="applyJobTitle"></p>
+                        <small class="text-muted" id="applyDates"></small>
+                    </div>
+                    <div class="alert alert-info border-0 rounded-3 py-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <small>Başvurunuz işverene iletilecek. İşveren sizi süreçlere dahil edebilir.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 gap-2">
+                    <button type="button" class="btn btn-light rounded-3 flex-fill" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-primary rounded-3 flex-fill">
+                        <i class="bi bi-send me-1"></i>Başvur
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Sınava/Mülakata Gir Modal ══ -->
+<div class="modal fade" id="stageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 text-white rounded-top-4"
+                 style="background:linear-gradient(135deg,#4f46e5,#0ea5e9);">
+                <h5 class="modal-title" id="stageModalTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center px-4 pt-4 pb-2">
+                <div id="stageModalIcon" class="mb-3" style="font-size:3.5rem;"></div>
+                <h6 class="fw-bold mb-1" id="stageModalCompany"></h6>
+                <p class="text-muted" id="stageModalDesc"></p>
+                <div class="alert alert-warning border-0 rounded-3 py-2 text-start small">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    Bu bir simülasyondur. "Tamamladım" butonuna basarak bu aşamanın üzerinize atanan görevini kapatabilirsiniz.
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 gap-2">
+                <button type="button" class="btn btn-light rounded-3 flex-fill" data-bs-dismiss="modal">Şimdi Değil</button>
+                <form asp-controller="Application" asp-action="MarkStageComplete" method="post" class="flex-fill">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="stageAppId" />
+                    <button type="submit" class="btn btn-primary rounded-3 w-100">
+                        <i class="bi bi-check-circle me-1"></i>Tamamladım ✓
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Başvur Modal
+    var applyModal = document.getElementById('applyModal');
+    if (applyModal) {
+        applyModal.addEventListener('show.bs.modal', function (e) {
+            var btn = e.relatedTarget;
+            document.getElementById('applyPostingId').value = btn.dataset.postingid;
+            document.getElementById('applyCompanyName').textContent = btn.dataset.company;
+            document.getElementById('applyJobTitle').textContent = btn.dataset.title;
+            document.getElementById('applyDates').textContent = btn.dataset.start + ' — ' + btn.dataset.end;
+        });
+    }
+
+    // Sınav/Mülakat Modal
+    var stageModal = document.getElementById('stageModal');
+    if (stageModal) {
+        stageModal.addEventListener('show.bs.modal', function (e) {
+            var btn = e.relatedTarget;
+            var stage = btn.dataset.stage;
+            document.getElementById('stageAppId').value = btn.dataset.appid;
+            document.getElementById('stageModalTitle').textContent = btn.dataset.label;
+            document.getElementById('stageModalCompany').textContent = btn.dataset.company;
+
+            var icons = { PreScreening:'📋', AptitudeTest:'🧠', LanguageTest:'🗣️', Interview:'🎙️' };
+            var descs = {
+                PreScreening: 'Ön eleme formunu incelediniz mi? İşveren sizinle iletişime geçecektir.',
+                AptitudeTest: 'Genel yetenek testi sürecinizi tamamladıysanız işaretleyin.',
+                LanguageTest: 'İngilizce sınavı sürecinizi tamamladıysanız işaretleyin.',
+                Interview:    'Mülakat randevunuza katıldıysanız tamamlandı olarak işaretleyin.'
+            };
+            document.getElementById('stageModalIcon').textContent = icons[stage] || '📌';
+            document.getElementById('stageModalDesc').textContent = descs[stage] || btn.dataset.label;
+        });
+    }
+});
+</script>
 }

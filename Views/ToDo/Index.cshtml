@@ -35,20 +35,21 @@
 
     <!-- Bekleyen ve Tamamlanan Görevler -->
     <div class="col-lg-8">
-        <!-- Bekleyen -->
+        
+        <!-- Bireysel ve Aşama Görevleri -->
         <div class="card-section mb-4">
             <div class="section-header">
-                <span><i class="bi bi-circle me-2"></i>Bekleyen Görevler
+                <span><i class="bi bi-circle me-2"></i>Bireysel ve Aşama Görevleri
                     <span class="badge bg-danger ms-2">@pending.Count</span>
                 </span>
             </div>
             @if (!pending.Any())
             {
-                <div class="empty-state"><i class="bi bi-check-all"></i><p>Harika! Bekleyen görev yok 🎉</p></div>
+                <div class="empty-state"><i class="bi bi-check-all"></i><p>Harika! Bekleyen bireysel görev yok 🎉</p></div>
             }
             @foreach (var todo in pending)
             {
-                <div class="todo-list-item @(todo.DueDate < DateTime.Today ? "overdue" : "")">
+                <div class="todo-list-item @(DateTime.Today > todo.DueDate ? "overdue" : "")">
                     <form asp-action="Toggle" asp-route-id="@todo.Id" method="post" class="d-inline">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn-toggle" title="Tamamlandı olarak işaretle">
@@ -63,9 +64,8 @@
                             <i class="bi bi-save"></i>
                         </button>
                     </form>
-                    <small class="todo-due-date @(todo.DueDate < DateTime.Today ? "text-danger" : "text-muted")">
+                    <small class="todo-due-date @(DateTime.Today > todo.DueDate ? "text-danger" : "text-muted")">
                         <i class="bi bi-calendar3 me-1"></i>@todo.DueDate.ToString("dd MMM yyyy")
-                        @if (todo.DueDate < DateTime.Today) { <span class="ms-1">Süresi geçti!</span> }
                     </small>
                     <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline">
                         @Html.AntiForgeryToken()
@@ -77,15 +77,79 @@
             }
         </div>
 
-        <!-- Tamamlanan -->
-        @if (completed.Any())
+        <!-- İşveren Tarafından Atanan Staj Görevleri -->
+        @{
+            var studentTasks = ViewBag.StudentTasks as List<CareerTrack.Models.Entities.StudentTask>;
+            var pendingTasks = studentTasks?.Where(t => !t.IsCompleted).ToList() ?? new List<CareerTrack.Models.Entities.StudentTask>();
+            var completedTasks = studentTasks?.Where(t => t.IsCompleted).ToList() ?? new List<CareerTrack.Models.Entities.StudentTask>();
+        }
+        
+        <div class="card-section mb-4">
+            <div class="section-header">
+                <span><i class="bi bi-briefcase-fill text-primary me-2"></i>İşverenin Atadığı Görevler
+                    @if (pendingTasks.Any())
+                    {
+                        <span class="badge bg-primary ms-2">@pendingTasks.Count</span>
+                    }
+                </span>
+            </div>
+            @if (!pendingTasks.Any())
+            {
+                <div class="empty-state">
+                    <i class="bi bi-briefcase"></i>
+                    <p class="text-muted">Şu an staj kapsamında atanmış bir göreviniz yok.</p>
+                </div>
+            }
+            @foreach (var task in pendingTasks)
+            {
+                <div class="todo-list-item @(task.DueDate.HasValue && DateTime.Today > task.DueDate.Value ? "overdue" : "")">
+                    <form asp-action="ToggleStudentTask" asp-route-id="@task.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-toggle" title="Görev tamamlandı">
+                            <i class="bi bi-circle"></i>
+                        </button>
+                    </form>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">@task.Title</div>
+                        @if (!string.IsNullOrEmpty(task.Description))
+                        {
+                            <div class="small text-muted">@task.Description</div>
+                        }
+                        <div class="small text-primary mt-1">@task.JobApplication?.Company?.Name</div>
+                    </div>
+                    @if (task.DueDate.HasValue)
+                    {
+                        <small class="todo-due-date @(DateTime.Today > task.DueDate.Value ? "text-danger" : "text-muted")">
+                            <i class="bi bi-calendar-event me-1"></i>@task.DueDate.Value.ToString("dd MMM yyyy")
+                        </small>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Tamamlanan Görevler -->
+        @if (completed.Any() || completedTasks.Any())
         {
             <div class="card-section">
                 <div class="section-header">
-                    <span><i class="bi bi-check-circle me-2"></i>Tamamlanan
-                        <span class="badge bg-success ms-2">@completed.Count</span>
+                    <span><i class="bi bi-check-circle me-2"></i>Tamamlanan Geçmiş
+                        <span class="badge bg-success ms-2">@(completed.Count + completedTasks.Count)</span>
                     </span>
                 </div>
+                
+                @foreach (var task in completedTasks)
+                {
+                    <div class="todo-list-item completed">
+                        <form asp-action="ToggleStudentTask" asp-route-id="@task.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-toggle-done"><i class="bi bi-check-circle-fill"></i></button>
+                        </form>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="text-decoration-line-through text-muted">@task.Title <span class="badge bg-light text-dark ms-2">Staj Görevi</span></div>
+                        </div>
+                    </div>
+                }
+
                 @foreach (var todo in completed)
                 {
                     <div class="todo-list-item completed">

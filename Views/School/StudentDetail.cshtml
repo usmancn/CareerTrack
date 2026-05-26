@@ -90,6 +90,7 @@
                                     <th>Pozisyon</th>
                                     <th>Tarih</th>
                                     <th>Durum</th>
+                                    <th class="text-end">İşlemler</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -102,18 +103,45 @@
                                         <td>
                                             @switch (app.Status)
                                             {
-                                                case ApplicationStatus.Pending:
-                                                    <span class="badge bg-warning text-dark">Bekliyor</span>
+                                                case ApplicationStatus.SchoolApproved:
+                                                    <span class="badge bg-success">Staj Devam Ediyor</span>
                                                     break;
-                                                case ApplicationStatus.InReview:
-                                                    <span class="badge bg-info">Değerlendirmede</span>
+                                                case ApplicationStatus.PreScreening:
+                                                    <span class="badge bg-info text-dark">Ön Eleme</span>
                                                     break;
-                                                case ApplicationStatus.Offered:
-                                                    <span class="badge bg-success">Teklif</span>
+                                                case ApplicationStatus.AptitudeTest:
+                                                    <span class="badge bg-primary">G.Y. Testi</span>
+                                                    break;
+                                                case ApplicationStatus.LanguageTest:
+                                                    <span class="badge bg-primary">Dil Sınavı</span>
+                                                    break;
+                                                case ApplicationStatus.Interview:
+                                                    <span class="badge bg-info">Mülakat</span>
+                                                    break;
+                                                case ApplicationStatus.EmployerAccepted:
+                                                    <span class="badge bg-success">Kabul Edildi</span>
                                                     break;
                                                 case ApplicationStatus.Rejected:
-                                                    <span class="badge bg-danger">Red</span>
+                                                    <span class="badge bg-danger">Reddedildi</span>
                                                     break;
+                                                case ApplicationStatus.Completed:
+                                                    <span class="badge bg-dark">Staj Bitti</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary">@app.Status.ToString()</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (app.Status == ApplicationStatus.SchoolApproved)
+                                            {
+                                                <form asp-action="CompleteInternship" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@app.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" onclick="return confirm('Öğrencinin tüm staj yükümlülüklerini (defter vb.) tamamladığını onaylıyor ve stajı resmi olarak bitiriyorsunuz. Emin misiniz?');">
+                                                        <i class="bi bi-check-all me-1"></i>Stajı Tamamla
+                                                    </button>
+                                                </form>
                                             }
                                         </td>
                                     </tr>
@@ -156,13 +184,20 @@
                                         <td class="fw-semibold">@log.DayNumber. gün</td>
                                         <td>@log.LogDate.ToString("dd.MM.yyyy")</td>
                                         <td>
-                                            @if (log.IsApprovedByAdmin)
+                                            @switch (log.Status)
                                             {
-                                                <span class="badge bg-success">Onaylı</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-warning text-dark">Bekliyor</span>
+                                                case CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved:
+                                                    <span class="badge bg-success">Okul Onaylı</span>
+                                                    break;
+                                                case CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved:
+                                                    <span class="badge bg-primary">İşveren Onaylı</span>
+                                                    break;
+                                                case CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer:
+                                                    <span class="badge bg-info text-dark">İşverende</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary">@log.Status.ToString()</span>
+                                                    break;
                                             }
                                         </td>
                                         <td>@(log.Content.Length > 60 ? log.Content.Substring(0, 60) + "..." : log.Content)</td>

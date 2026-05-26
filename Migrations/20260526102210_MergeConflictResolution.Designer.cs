@@ -3,6 +3,7 @@ using System;
 using CareerTrack.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CareerTrack.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526102210_MergeConflictResolution")]
+    partial class MergeConflictResolution
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
@@ -140,6 +143,10 @@ namespace CareerTrack.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AdminNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(5000)
@@ -148,28 +155,11 @@ namespace CareerTrack.Migrations
                     b.Property<int>("DayNumber")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("EmployerNote")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsEmployerApproved")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsSchoolApproved")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("JobApplicationId")
+                    b.Property<bool>("IsApprovedByAdmin")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("LogDate")
                         .HasColumnType("TEXT");
-
-                    b.Property<string>("SchoolNote")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("StudentId")
                         .IsRequired()
@@ -177,11 +167,38 @@ namespace CareerTrack.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("JobApplicationId");
-
                     b.HasIndex("StudentId");
 
                     b.ToTable("DailyLogs");
+                });
+
+            modelBuilder.Entity("CareerTrack.Models.Entities.Interview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("InterviewDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("JobApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ResultStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Stage")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobApplicationId");
+
+                    b.ToTable("Interviews");
                 });
 
             modelBuilder.Entity("CareerTrack.Models.Entities.JobApplication", b =>
@@ -196,17 +213,8 @@ namespace CareerTrack.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("EmployerNote")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("InternshipEndDate")
-                        .HasColumnType("TEXT");
-
                     b.Property<int?>("InternshipPostingId")
                         .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("InternshipStartDate")
-                        .HasColumnType("TEXT");
 
                     b.Property<int>("InternshipType")
                         .HasColumnType("INTEGER");
@@ -216,18 +224,12 @@ namespace CareerTrack.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SchoolNote")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("StudentId")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<int?>("TotalInternshipDays")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -288,47 +290,34 @@ namespace CareerTrack.Migrations
                     b.ToTable("JobPostings");
                 });
 
-            modelBuilder.Entity("CareerTrack.Models.Entities.StudentTask", b =>
+            modelBuilder.Entity("CareerTrack.Models.Entities.Offer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("AssignedByEmployerId")
-                        .IsRequired()
+                    b.Property<string>("Benefits")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("CompletedAt")
+                    b.Property<DateTime>("DeadlineDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsCompleted")
+                    b.Property<bool>("IsAccepted")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("JobApplicationId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
+                    b.Property<decimal>("Salary")
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssignedByEmployerId");
+                    b.HasIndex("JobApplicationId")
+                        .IsUnique();
 
-                    b.HasIndex("JobApplicationId");
-
-                    b.ToTable("StudentTasks");
+                    b.ToTable("Offers");
                 });
 
             modelBuilder.Entity("CareerTrack.Models.Entities.ToDo", b =>
@@ -346,9 +335,6 @@ namespace CareerTrack.Migrations
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("JobApplicationId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("StudentId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -359,8 +345,6 @@ namespace CareerTrack.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("JobApplicationId");
 
                     b.HasIndex("StudentId");
 
@@ -524,21 +508,24 @@ namespace CareerTrack.Migrations
 
             modelBuilder.Entity("CareerTrack.Models.Entities.DailyLog", b =>
                 {
-                    b.HasOne("CareerTrack.Models.Entities.JobApplication", "JobApplication")
-                        .WithMany()
-                        .HasForeignKey("JobApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("CareerTrack.Models.Entities.ApplicationUser", "Student")
                         .WithMany("DailyLogs")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("JobApplication");
-
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("CareerTrack.Models.Entities.Interview", b =>
+                {
+                    b.HasOne("CareerTrack.Models.Entities.JobApplication", "JobApplication")
+                        .WithMany("Interviews")
+                        .HasForeignKey("JobApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobApplication");
                 });
 
             modelBuilder.Entity("CareerTrack.Models.Entities.JobApplication", b =>
@@ -579,38 +566,24 @@ namespace CareerTrack.Migrations
                     b.Navigation("Employer");
                 });
 
-            modelBuilder.Entity("CareerTrack.Models.Entities.StudentTask", b =>
+            modelBuilder.Entity("CareerTrack.Models.Entities.Offer", b =>
                 {
-                    b.HasOne("CareerTrack.Models.Entities.ApplicationUser", "AssignedByEmployer")
-                        .WithMany()
-                        .HasForeignKey("AssignedByEmployerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("CareerTrack.Models.Entities.JobApplication", "JobApplication")
-                        .WithMany()
-                        .HasForeignKey("JobApplicationId")
+                        .WithOne("Offer")
+                        .HasForeignKey("CareerTrack.Models.Entities.Offer", "JobApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("AssignedByEmployer");
 
                     b.Navigation("JobApplication");
                 });
 
             modelBuilder.Entity("CareerTrack.Models.Entities.ToDo", b =>
                 {
-                    b.HasOne("CareerTrack.Models.Entities.JobApplication", "JobApplication")
-                        .WithMany("ToDos")
-                        .HasForeignKey("JobApplicationId");
-
                     b.HasOne("CareerTrack.Models.Entities.ApplicationUser", "Student")
                         .WithMany("ToDos")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("JobApplication");
 
                     b.Navigation("Student");
                 });
@@ -686,7 +659,9 @@ namespace CareerTrack.Migrations
 
             modelBuilder.Entity("CareerTrack.Models.Entities.JobApplication", b =>
                 {
-                    b.Navigation("ToDos");
+                    b.Navigation("Interviews");
+
+                    b.Navigation("Offer");
                 });
 #pragma warning restore 612, 618
         }

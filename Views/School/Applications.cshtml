@@ -1,52 +1,168 @@
 @model List<CareerTrack.Models.Entities.JobApplication>
+@using CareerTrack.Models.Enums
 @{
-    ViewData["Title"] = "Öğrenci Başvuruları";
+    ViewData["Title"] = "Okul Onayı Bekleyen Başvurular";
 }
 
-<div class="table-card">
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr>
-                <th>Öğrenci</th>
-                <th>Şirket</th>
-                <th>Pozisyon</th>
-                <th>Tarih</th>
-                <th>Staj Türü</th>
-                <th>Durum</th>
-                <th>Mülakatlar</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var app in Model)
-            {
-                <tr>
-                    <td><strong>@app.Student?.FullName</strong></td>
-                    <td>@app.Company?.Name</td>
-                    <td>@app.Position</td>
-                    <td>@app.ApplicationDate.ToString("dd.MM.yyyy")</td>
-                    <td>
-                        <span class="badge bg-secondary">
-                            @(app.InternshipType switch {
-                                InternshipType.Voluntary => "Gönüllü",
-                                InternshipType.MandatoryShort => "Zorunlu Kısa",
-                                InternshipType.LongTerm => "70 Gün",
-                                _ => app.InternshipType.ToString()
-                            })
-                        </span>
-                    </td>
-                    <td>
-                        <span class="status-badge status-@app.Status.ToString().ToLower()">
-                            @(app.Status switch {
-                                ApplicationStatus.Offered => "Teklif",
-                                ApplicationStatus.InReview => "İncelemede",
-                                ApplicationStatus.Rejected => "Reddedildi",
-                                _ => "Bekliyor"
-                            })
-                        </span>
-                    </td>
-                    <td><span class="badge bg-info text-dark">@app.Interviews.Count aşama</span></td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-clipboard-check me-2"></i>Okul Onayı Bekleyen Başvurular</h4>
+        <p class="text-muted small mb-0">İşveren kabul ettiği öğrenciler için staj uygunluk onayı veriniz.</p>
+    </div>
 </div>
+
+@if (!Model.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-clipboard-x fs-1 text-muted"></i>
+            <h5 class="mt-3 text-muted">Şu anda onay bekleyen başvuru bulunmuyor</h5>
+            <p class="text-muted small">İşverenler öğrencileri kabul ettiğinde burada görünecek.</p>
+        </div>
+    </div>
+}
+else
+{
+    @foreach (var app in Model)
+    {
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3"
+                                 style="width:48px;height:48px;font-size:1.2rem;font-weight:bold;">
+                                @(app.Student?.FullName?.Substring(0, 1).ToUpper() ?? "Ö")
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">@app.Student?.FullName</h6>
+                                <small class="text-muted">@app.Student?.Department</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-1">
+                            <i class="bi bi-building me-1 text-primary"></i>
+                            <strong>@app.Company?.Name</strong>
+                        </div>
+                        <div class="mb-1">
+                            <i class="bi bi-briefcase me-1 text-muted"></i>
+                            <span class="text-muted small">@app.Position</span>
+                        </div>
+                        @if (app.InternshipStartDate.HasValue)
+                        {
+                            <div>
+                                <i class="bi bi-calendar-range me-1 text-muted"></i>
+                                <span class="text-muted small">
+                                    @app.InternshipStartDate.Value.ToString("dd.MM.yyyy") —
+                                    @(app.InternshipEndDate?.ToString("dd.MM.yyyy") ?? "?")
+                                    @if (app.TotalInternshipDays.HasValue)
+                                    {
+                                        <span>(@app.TotalInternshipDays gün)</span>
+                                    }
+                                </span>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-4">
+                        @if (app.Status == ApplicationStatus.EmployerAccepted ||
+                             app.Status == ApplicationStatus.SchoolPending)
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                <button type="button" class="btn btn-success btn-sm w-100" data-bs-toggle="modal" data-bs-target="#approveModal-@app.Id">
+                                    <i class="bi bi-check-circle me-1"></i>Stajı Onayla
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#rejectModal-@app.Id">
+                                    <i class="bi bi-x-circle me-1"></i>Reddet
+                                </button>
+                            </div>
+
+                            <!-- Onay Modal -->
+                            <div class="modal fade" id="approveModal-@app.Id" tabindex="-1" aria-labelledby="approveModalLabel-@app.Id" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold" id="approveModalLabel-@app.Id">
+                                                <i class="bi bi-check-circle-fill text-success me-2"></i>Stajı Onayla
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                        </div>
+                                        <form asp-action="ApproveApplication" method="post">
+                                            <div class="modal-body">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@app.Id" />
+                                                <input type="hidden" name="approve" value="true" />
+                                                
+                                                <p class="text-muted small mb-3">
+                                                    <strong>@app.Student?.FullName</strong> adlı öğrencinin <strong>@app.Company?.Name</strong> şirketindeki stajını onaylıyorsunuz.
+                                                </p>
+
+                                                <label class="form-label fw-bold">Okul Onay Notu (Opsiyonel)</label>
+                                                <textarea name="schoolNote" class="form-control" rows="3" placeholder="Öğrenciye veya işverene iletmek istediğiniz not (örn: Staj defteri yönergelerine dikkat ediniz)..."></textarea>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="bi bi-check-lg me-1"></i>Onayla ve Başlat
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ret Modal -->
+                            <div class="modal fade" id="rejectModal-@app.Id" tabindex="-1" aria-labelledby="rejectModalLabel-@app.Id" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold" id="rejectModalLabel-@app.Id">
+                                                <i class="bi bi-x-circle-fill text-danger me-2"></i>Stajı Reddet / Revize İste
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                        </div>
+                                        <form asp-action="ApproveApplication" method="post">
+                                            <div class="modal-body">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@app.Id" />
+                                                <input type="hidden" name="approve" value="false" />
+                                                
+                                                <p class="text-muted small mb-3">
+                                                    Staj şartları okul yönergelerine uymuyorsa stajı reddedebilir veya revize isteyebilirsiniz.
+                                                </p>
+
+                                                <label class="form-label fw-bold text-danger">Ret / Revize Gerekçesi (Zorunlu)</label>
+                                                <textarea name="schoolNote" class="form-control" rows="3" placeholder="Lütfen neden reddettiğinizi yazın (örn: Staj tarihleri akademik takvimle uyuşmuyor)..." required></textarea>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-x-lg me-1"></i>Reddet
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-items-end h-100 justify-content-center">
+                                <span class="badge @(app.Status == ApplicationStatus.SchoolApproved ? "bg-success" : "bg-danger") px-3 py-2 fs-6 mb-2 rounded-pill shadow-sm">
+                                    <i class="bi @(app.Status == ApplicationStatus.SchoolApproved ? "bi-check-circle" : "bi-x-circle") me-1"></i>
+                                    @(app.Status == ApplicationStatus.SchoolApproved ? "Staj Devam Ediyor" : "Reddedildi")
+                                </span>
+                                @if (!string.IsNullOrEmpty(app.SchoolNote))
+                                {
+                                    <div class="text-muted small mt-1 bg-light p-2 rounded border-start border-3 @(app.Status == ApplicationStatus.SchoolApproved ? "border-success" : "border-danger")">
+                                        <i class="bi bi-chat-left-text me-1"></i> @app.SchoolNote
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}

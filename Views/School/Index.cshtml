@@ -55,9 +55,21 @@
                         <div class="list-item-title">@log.Student?.FullName</div>
                         <div class="list-item-sub">@log.DayNumber. Gün • @log.LogDate.ToString("dd.MM.yyyy")</div>
                     </div>
-                    <span class="badge @(log.IsApprovedByAdmin ? "bg-success" : "bg-warning text-dark")">
-                        @(log.IsApprovedByAdmin ? "Onaylandı" : "Bekliyor")
-                    </span>
+                    @switch (log.Status)
+                    {
+                        case CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved:
+                            <span class="badge bg-warning text-dark">İşlem Bekliyor</span>
+                            break;
+                        case CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved:
+                            <span class="badge bg-success">Onaylandı</span>
+                            break;
+                        case CareerTrack.Models.Enums.DailyLogStatus.SchoolRejected:
+                            <span class="badge bg-danger">Revize İstendi</span>
+                            break;
+                        default:
+                            <span class="badge bg-secondary">@log.Status.ToString()</span>
+                            break;
+                    }
                 </div>
             }
         </div>
@@ -85,10 +97,17 @@
                     </div>
                     <span class="status-badge status-@app.Status.ToString().ToLower()">
                         @(app.Status switch {
-                            ApplicationStatus.Offered => "Teklif",
-                            ApplicationStatus.InReview => "İncelemede",
+                            ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                            ApplicationStatus.SchoolRevision => "Revize İstendi",
+                            ApplicationStatus.SchoolApproved => "Okul Onaylı",
+                            ApplicationStatus.PreScreening => "Ön Eleme",
+                            ApplicationStatus.AptitudeTest => "Test",
+                            ApplicationStatus.LanguageTest => "Dil Sınavı",
+                            ApplicationStatus.Interview => "Mülakat",
+                            ApplicationStatus.EmployerAccepted => "Kabul Edildi",
                             ApplicationStatus.Rejected => "Reddedildi",
-                            _ => "Bekliyor"
+                            ApplicationStatus.Completed => "Tamamlandı",
+                            _ => app.Status.ToString()
                         })
                     </span>
                 </div>

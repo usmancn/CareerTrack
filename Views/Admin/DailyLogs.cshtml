@@ -24,15 +24,27 @@
                     <td>@log.LogDate.ToString("dd.MM.yyyy")</td>
                     <td class="text-truncate" style="max-width:250px;">@log.Content</td>
                     <td>
-                        <span class="badge @(log.IsApprovedByAdmin ? "bg-success" : "bg-warning text-dark")">
-                            @(log.IsApprovedByAdmin ? "✓ Onaylandı" : "Bekliyor")
-                        </span>
+                        @switch (log.Status)
+                        {
+                            case CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved:
+                                <span class="badge bg-success">Okul Onaylı</span>
+                                break;
+                            case CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved:
+                                <span class="badge bg-primary">İşveren Onaylı</span>
+                                break;
+                            case CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer:
+                                <span class="badge bg-info text-dark">İşverende</span>
+                                break;
+                            default:
+                                <span class="badge bg-secondary">@log.Status.ToString()</span>
+                                break;
+                        }
                     </td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                                 data-bs-target="#logModal" data-id="@log.Id"
-                                data-content="@log.Content" data-note="@log.AdminNote"
-                                data-approved="@log.IsApprovedByAdmin.ToString().ToLower()">
+                                data-content="@log.Content" data-note="@log.SchoolNote"
+                                data-approved="@((log.Status == CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved).ToString().ToLower())">
                             <i class="bi bi-eye me-1"></i>İncele
                         </button>
                     </td>

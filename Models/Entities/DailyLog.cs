@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using CareerTrack.Models.Enums;
 
 namespace CareerTrack.Models.Entities
 {
@@ -8,6 +9,9 @@ namespace CareerTrack.Models.Entities
 
         [Required]
         public string StudentId { get; set; } = string.Empty;
+
+        [Required]
+        public int JobApplicationId { get; set; }
 
         [Required(ErrorMessage = "Gün numarası zorunludur.")]
         [Range(1, 365, ErrorMessage = "Gün numarası 1-365 arasında olmalıdır.")]
@@ -25,14 +29,25 @@ namespace CareerTrack.Models.Entities
         [Display(Name = "Bugün Neler Yaptınız?")]
         public string Content { get; set; } = string.Empty;
 
-        [Display(Name = "Danışman Onay Durumu")]
-        public bool IsApprovedByAdmin { get; set; } = false;
+        [Display(Name = "Durum")]
+        public DailyLogStatus Status { get; set; } = DailyLogStatus.Draft;
+
+        [Display(Name = "İşveren Onayı")]
+        public bool IsEmployerApproved { get; set; } = false;
 
         [StringLength(500)]
-        [Display(Name = "Admin / Danışman Notu")]
-        public string? AdminNote { get; set; }
+        [Display(Name = "İşveren Notu")]
+        public string? EmployerNote { get; set; }
+
+        [Display(Name = "Okul Onayı")]
+        public bool IsSchoolApproved { get; set; } = false;
+
+        [StringLength(500)]
+        [Display(Name = "Okul / Danışman Notu")]
+        public string? SchoolNote { get; set; }
 
         // Navigation Property
         public ApplicationUser? Student { get; set; }
+        public JobApplication? JobApplication { get; set; }
     }
 }

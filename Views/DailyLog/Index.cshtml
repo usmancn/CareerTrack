@@ -24,33 +24,59 @@ else
         @foreach (var log in Model)
         {
             <div class="col-md-6">
-                <div class="log-card @(log.IsApprovedByAdmin ? "log-approved" : "")">
+                <div class="log-card @(log.Status == CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved ? "log-approved" : "")">
                     <div class="log-card-header">
                         <div>
                             <span class="log-day">@log.DayNumber. Gün</span>
                             <span class="log-date">@log.LogDate.ToString("dd MMMM yyyy")</span>
                         </div>
                         <div>
-                            @if (log.IsApprovedByAdmin)
+                            @switch (log.Status)
                             {
-                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Onaylandı</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Onay Bekliyor</span>
+                                case CareerTrack.Models.Enums.DailyLogStatus.Draft:
+                                    <span class="badge bg-secondary"><i class="bi bi-pencil-square me-1"></i>Taslak</span>
+                                    break;
+                                case CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer:
+                                    <span class="badge bg-info text-dark"><i class="bi bi-send me-1"></i>İşverene Gönderildi</span>
+                                    break;
+                                case CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved:
+                                    <span class="badge bg-primary"><i class="bi bi-check me-1"></i>İşveren Onaylı (Okula Gitti)</span>
+                                    break;
+                                case CareerTrack.Models.Enums.DailyLogStatus.EmployerRejected:
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>İşveren Reddetti</span>
+                                    break;
+                                case CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved:
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Okul Onayladı</span>
+                                    break;
                             }
                         </div>
                     </div>
                     <p class="log-content">@(log.Content.Length > 150 ? log.Content.Substring(0, 150) + "..." : log.Content)</p>
-                    @if (!string.IsNullOrEmpty(log.AdminNote))
+                    
+                    @if (!string.IsNullOrEmpty(log.EmployerNote))
                     {
-                        <div class="admin-note">
-                            <i class="bi bi-chat-left-text me-1"></i><strong>Danışman:</strong> @log.AdminNote
+                        <div class="admin-note mt-2">
+                            <i class="bi bi-briefcase me-1"></i><strong>İşveren Notu:</strong> @log.EmployerNote
                         </div>
                     }
-                    <div class="log-actions">
-                        @if (!log.IsApprovedByAdmin)
+                    @if (!string.IsNullOrEmpty(log.SchoolNote))
+                    {
+                        <div class="admin-note mt-2">
+                            <i class="bi bi-bank me-1"></i><strong>Okul Notu:</strong> @log.SchoolNote
+                        </div>
+                    }
+
+                    <div class="log-actions mt-3">
+                        @if (log.Status == CareerTrack.Models.Enums.DailyLogStatus.Draft || log.Status == CareerTrack.Models.Enums.DailyLogStatus.EmployerRejected)
                         {
+                            <form asp-action="SendToEmployer" asp-route-id="@log.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Bu günlüğü işveren onayına göndermek istediğinize emin misiniz?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-send"></i> Gönder
+                                </button>
+                            </form>
+                            
                             <a asp-action="Edit" asp-route-id="@log.Id" class="btn btn-sm btn-outline-warning">
                                 <i class="bi bi-pencil"></i> Düzenle
                             </a>

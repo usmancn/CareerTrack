@@ -76,10 +76,16 @@
                         </div>
                         <span class="status-badge status-@app.Status.ToString().ToLower()">
                             @(app.Status switch {
-                                ApplicationStatus.Pending => "Bekliyor",
-                                ApplicationStatus.InReview => "İncelemede",
-                                ApplicationStatus.Offered => "Teklif ✓",
+                                ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                                ApplicationStatus.SchoolRevision => "Revize İstendi",
+                                ApplicationStatus.SchoolApproved => "Okul Onaylı",
+                                ApplicationStatus.PreScreening => "Ön Eleme",
+                                ApplicationStatus.AptitudeTest => "Test",
+                                ApplicationStatus.LanguageTest => "Dil Sınavı",
+                                ApplicationStatus.Interview => "Mülakat",
+                                ApplicationStatus.EmployerAccepted => "Kabul Edildi",
                                 ApplicationStatus.Rejected => "Reddedildi",
+                                ApplicationStatus.Completed => "Tamamlandı",
                                 _ => app.Status.ToString()
                             })
                         </span>
@@ -89,75 +95,59 @@
         </div>
     </div>
 
-    <!-- Yaklaşan Mülakatlar -->
+    <!-- Staj Görevleri ve Aşamalar -->
     <div class="col-lg-6">
         <div class="card-section">
             <div class="section-header">
-                <span><i class="bi bi-calendar-event-fill me-2"></i>Yaklaşan Mülakatlar</span>
+                <span><i class="bi bi-list-check me-2"></i>Bekleyen İşlemler ve Görevler</span>
             </div>
-            @if (!Model.UpcomingInterviews.Any())
-            {
-                <div class="empty-state">
-                    <i class="bi bi-calendar-x"></i>
-                    <p>Yaklaşan mülakat yok</p>
-                </div>
-            }
-            else
-            {
-                @foreach (var iv in Model.UpcomingInterviews)
-                {
-                    <div class="list-item">
-                        <div class="list-item-icon interview-icon">
-                            <i class="bi bi-mic"></i>
-                        </div>
-                        <div class="list-item-body">
-                            <div class="list-item-title">@iv.JobApplication?.Company?.Name</div>
-                            <div class="list-item-sub">
-                                @(iv.Stage switch {
-                                    InterviewStage.AptitudeTest => "Genel Yetenek Testi",
-                                    InterviewStage.LanguageTest => "Yabancı Dil",
-                                    InterviewStage.HRInterview => "İK Mülakatı",
-                                    InterviewStage.TechnicalInterview => "Teknik Mülakat",
-                                    _ => iv.Stage.ToString()
-                                })
-                            </div>
-                        </div>
-                        <div class="interview-date">
-                            <i class="bi bi-calendar3"></i>
-                            @iv.InterviewDate.ToString("dd MMM")
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-    </div>
-
-    <!-- To-Do Listesi -->
-    <div class="col-12">
-        <div class="card-section">
-            <div class="section-header">
-                <span><i class="bi bi-check2-square me-2"></i>Bekleyen Görevler</span>
-                <a asp-controller="ToDo" asp-action="Index" class="see-all">Tümünü Gör</a>
-            </div>
-            @if (!Model.IncompleteToDos.Any())
+            @if (!Model.UpcomingTasks.Any() && !Model.IncompleteToDos.Any())
             {
                 <div class="empty-state">
                     <i class="bi bi-check-all"></i>
-                    <p>Tüm görevler tamamlandı! 🎉</p>
+                    <p>Harika! Bekleyen hiçbir işlem veya göreviniz yok.</p>
                 </div>
             }
             else
             {
-                <div class="todo-grid">
-                    @foreach (var todo in Model.IncompleteToDos.Take(6))
-                    {
-                        <div class="todo-item @(todo.DueDate < DateTime.Today ? "todo-overdue" : "")">
-                            <i class="bi bi-circle me-2"></i>
-                            <span>@todo.TaskTitle</span>
-                            <small class="todo-date">@todo.DueDate.ToString("dd.MM.yyyy")</small>
+                <!-- Staj Aşamaları (Sınav, Mülakat vb.) -->
+                @foreach (var todo in Model.IncompleteToDos.OrderBy(t => t.DueDate))
+                {
+                    <div class="list-item">
+                        <div class="list-item-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-clock-history"></i>
                         </div>
-                    }
-                </div>
+                        <div class="list-item-body">
+                            <div class="list-item-title">Aşama Beklentisi</div>
+                            <div class="list-item-sub">@todo.TaskTitle</div>
+                        </div>
+                        <div class="interview-date">
+                            <i class="bi bi-calendar3"></i>
+                            @todo.DueDate.ToString("dd MMM yyyy")
+                        </div>
+                    </div>
+                }
+
+                <!-- İşveren Tarafından Atanan Görevler -->
+                @foreach (var task in Model.UpcomingTasks)
+                {
+                    <div class="list-item">
+                        <div class="list-item-icon interview-icon">
+                            <i class="bi bi-briefcase"></i>
+                        </div>
+                        <div class="list-item-body">
+                            <div class="list-item-title">@task.JobApplication?.Company?.Name - Staj Görevi</div>
+                            <div class="list-item-sub">@task.Title</div>
+                        </div>
+                        @if (task.DueDate.HasValue)
+                        {
+                            <div class="interview-date">
+                                <i class="bi bi-calendar-check"></i>
+                                @task.DueDate.Value.ToString("dd MMM yyyy")
+                            </div>
+                        }
+                    </div>
+                }
             }
         </div>
     </div>

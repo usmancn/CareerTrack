@@ -40,17 +40,16 @@ namespace CareerTrack.Controllers
             // LINQ sorguları — tek ViewModel'e üç tablo
             var activeApplications = await _context.JobApplications
                 .Include(a => a.Company)
-                .Include(a => a.Interviews)
                 .Where(a => a.StudentId == studentId)
                 .OrderByDescending(a => a.ApplicationDate)
                 .ToListAsync();
 
-            var upcomingInterviews = await _context.Interviews
-                .Include(i => i.JobApplication)
+            var upcomingTasks = await _context.StudentTasks
+                .Include(t => t.JobApplication)
                     .ThenInclude(a => a!.Company)
-                .Where(i => i.JobApplication!.StudentId == studentId
-                         && i.InterviewDate >= DateTime.Today)
-                .OrderBy(i => i.InterviewDate)
+                .Where(t => t.JobApplication!.StudentId == studentId
+                         && !t.IsCompleted)
+                .OrderBy(t => t.DueDate)
                 .Take(5)
                 .ToListAsync();
 
@@ -61,19 +60,19 @@ namespace CareerTrack.Controllers
 
             // ViewBag — _Layout bildirim badge'leri için
             ViewBag.PendingTodos = incompleteToDos.Count;
-            ViewBag.UpcomingInterviews = upcomingInterviews.Count;
+            ViewBag.UpcomingTasks = upcomingTasks.Count;
 
             var vm = new StudentDashboardViewModel
             {
                 StudentName = user.FullName,
                 Department = user.Department,
                 ActiveApplications = activeApplications,
-                UpcomingInterviews = upcomingInterviews,
+                UpcomingTasks = upcomingTasks,
                 IncompleteToDos = incompleteToDos,
                 TotalApplications = activeApplications.Count,
-                OfferedCount = activeApplications.Count(a => a.Status == ApplicationStatus.Offered),
+                OfferedCount = activeApplications.Count(a => a.Status == ApplicationStatus.EmployerAccepted),
                 RejectedCount = activeApplications.Count(a => a.Status == ApplicationStatus.Rejected),
-                InReviewCount = activeApplications.Count(a => a.Status == ApplicationStatus.InReview)
+                InReviewCount = activeApplications.Count(a => a.Status >= ApplicationStatus.PreScreening && a.Status <= ApplicationStatus.Interview)
             };
 
             return View(vm);

@@ -31,7 +31,16 @@ namespace CareerTrack.Controllers
                 .OrderBy(t => t.IsCompleted).ThenBy(t => t.DueDate)
                 .ToListAsync();
 
+            var studentTasks = await _context.StudentTasks
+                .Include(t => t.JobApplication)
+                    .ThenInclude(j => j!.Company)
+                .Where(t => t.JobApplication!.StudentId == userId)
+                .OrderBy(t => t.IsCompleted).ThenBy(t => t.DueDate)
+                .ToListAsync();
+
             ViewBag.PendingTodos = todos.Count(t => !t.IsCompleted);
+            ViewBag.StudentTasks = studentTasks;
+
             return View(todos);
         }
 
@@ -111,6 +120,22 @@ namespace CareerTrack.Controllers
             var todo = await _context.ToDos.FirstOrDefaultAsync(t => t.Id == id && t.StudentId == userId);
             if (todo == null) return NotFound();
             _context.ToDos.Remove(todo);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStudentTask(int id)
+        {
+            var userId = await GetUserIdAsync();
+            var task = await _context.StudentTasks
+                .Include(t => t.JobApplication)
+                .FirstOrDefaultAsync(t => t.Id == id && t.JobApplication!.StudentId == userId);
+            
+            if (task == null) return NotFound();
+            
+            task.IsCompleted = !task.IsCompleted;
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

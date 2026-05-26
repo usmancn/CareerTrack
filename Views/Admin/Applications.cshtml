@@ -13,7 +13,6 @@
                 <th>Tarih</th>
                 <th>Staj Türü</th>
                 <th>Durum</th>
-                <th>Mülakatlar</th>
                 <th class="text-end">İşlem</th>
             </tr>
         </thead>
@@ -38,48 +37,47 @@
                     <td>
                         <span class="status-badge status-@app.Status.ToString().ToLower()">
                             @(app.Status switch {
-                                ApplicationStatus.Offered => "Teklif ✓",
-                                ApplicationStatus.InReview => "İncelemede",
+                                ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                                ApplicationStatus.SchoolRevision => "Revize İstendi",
+                                ApplicationStatus.SchoolApproved => "Okul Onaylı",
+                                ApplicationStatus.PreScreening => "Ön Eleme",
+                                ApplicationStatus.AptitudeTest => "Test",
+                                ApplicationStatus.LanguageTest => "Dil Sınavı",
+                                ApplicationStatus.Interview => "Mülakat",
+                                ApplicationStatus.EmployerAccepted => "Kabul Edildi",
                                 ApplicationStatus.Rejected => "Reddedildi",
-                                _ => "Bekliyor"
+                                ApplicationStatus.Completed => "Tamamlandı",
+                                _ => app.Status.ToString()
                             })
                         </span>
                     </td>
-                    <td><span class="badge bg-info text-dark">@app.Interviews.Count aşama</span></td>
                     <td class="text-end">
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
                                     data-bs-toggle="dropdown">
                                 Durum Güncelle
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                @foreach (ApplicationStatus status in Enum.GetValues(typeof(ApplicationStatus)))
-                                {
-                                    <li>
-                                        <form asp-action="UpdateApplicationStatus" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@app.Id" />
-                                            <input type="hidden" name="status" value="@status" />
-                                            <button type="submit" class="dropdown-item @(app.Status == status ? "active" : "")">
-                                                @switch (status)
-                                                {
-                                                    case ApplicationStatus.Pending:
-                                                        <text>⏳ Bekliyor</text>
-                                                        break;
-                                                    case ApplicationStatus.InReview:
-                                                        <text>🔍 Değerlendirmede</text>
-                                                        break;
-                                                    case ApplicationStatus.Offered:
-                                                        <text>✅ Teklif Gönder</text>
-                                                        break;
-                                                    case ApplicationStatus.Rejected:
-                                                        <text>❌ Reddet</text>
-                                                        break;
-                                                }
-                                            </button>
-                                        </form>
-                                    </li>
-                                }
+                            <ul class="dropdown-menu dropdown-menu-end p-3" style="min-width: 250px;">
+                                <li>
+                                    <form asp-action="UpdateApplicationStatus" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@app.Id" />
+                                        
+                                        <div class="mb-2">
+                                            <select name="status" class="form-select form-select-sm">
+                                                <option value="@ApplicationStatus.SchoolApproved" selected="@(app.Status == ApplicationStatus.SchoolApproved)">Okul Onaylı</option>
+                                                <option value="@ApplicationStatus.PreScreening" selected="@(app.Status == ApplicationStatus.PreScreening)">Ön Eleme</option>
+                                                <option value="@ApplicationStatus.AptitudeTest" selected="@(app.Status == ApplicationStatus.AptitudeTest)">Genel Yetenek Testi</option>
+                                                <option value="@ApplicationStatus.LanguageTest" selected="@(app.Status == ApplicationStatus.LanguageTest)">Dil Sınavı</option>
+                                                <option value="@ApplicationStatus.Interview" selected="@(app.Status == ApplicationStatus.Interview)">Mülakat</option>
+                                                <option value="@ApplicationStatus.EmployerAccepted" selected="@(app.Status == ApplicationStatus.EmployerAccepted)">Kabul Et</option>
+                                                <option value="@ApplicationStatus.Rejected" selected="@(app.Status == ApplicationStatus.Rejected)">Reddet</option>
+                                                <option value="@ApplicationStatus.Completed" selected="@(app.Status == ApplicationStatus.Completed)">Staj Tamamlandı</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100">Güncelle</button>
+                                    </form>
+                                </li>
                             </ul>
                         </div>
                     </td>

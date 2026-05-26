@@ -124,17 +124,32 @@
                                         <td>
                                             @switch (app.Status)
                                             {
-                                                case ApplicationStatus.Pending:
-                                                    <span class="badge bg-warning text-dark">Bekliyor</span>
+                                                case ApplicationStatus.SchoolApproved:
+                                                    <span class="badge bg-warning text-dark">İşlem Bekliyor</span>
                                                     break;
-                                                case ApplicationStatus.InReview:
-                                                    <span class="badge bg-info">Değerlendirmede</span>
+                                                case ApplicationStatus.PreScreening:
+                                                    <span class="badge bg-info text-dark">Ön Eleme</span>
                                                     break;
-                                                case ApplicationStatus.Offered:
-                                                    <span class="badge bg-success">Teklif Gönderildi</span>
+                                                case ApplicationStatus.AptitudeTest:
+                                                    <span class="badge bg-primary">G.Y. Testi</span>
+                                                    break;
+                                                case ApplicationStatus.LanguageTest:
+                                                    <span class="badge bg-primary">Dil Sınavı</span>
+                                                    break;
+                                                case ApplicationStatus.Interview:
+                                                    <span class="badge bg-info">Mülakat</span>
+                                                    break;
+                                                case ApplicationStatus.EmployerAccepted:
+                                                    <span class="badge bg-success">Kabul Edildi</span>
                                                     break;
                                                 case ApplicationStatus.Rejected:
                                                     <span class="badge bg-danger">Reddedildi</span>
+                                                    break;
+                                                case ApplicationStatus.Completed:
+                                                    <span class="badge bg-dark">Staj Bitti</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary">@app.Status.ToString()</span>
                                                     break;
                                             }
                                         </td>

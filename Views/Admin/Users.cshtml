@@ -3,6 +3,16 @@
     ViewData["Title"] = "Kullanıcı Rolleri";
 }
 
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-people me-2"></i>Kullanıcı Rolleri</h4>
+        <p class="text-muted small mb-0">Sistemdeki tüm kullanıcıları yönetin ve rollerini değiştirin.</p>
+    </div>
+    <a asp-action="CreateUser" class="btn btn-primary">
+        <i class="bi bi-person-plus me-1"></i> Yeni Kullanıcı Ekle
+    </a>
+</div>
+
 <div class="table-card">
     <table class="table table-hover align-middle mb-0">
         <thead>

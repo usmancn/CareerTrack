@@ -35,37 +35,7 @@
     </div>
 </div>
 
-<!-- Alt Satır: Başvuru & İçerik Özeti -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-orange">
-            <div class="stat-icon"><i class="bi bi-send"></i></div>
-            <div class="stat-value">@Model.TotalApplications</div>
-            <div class="stat-label">Toplam Başvuru</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-red">
-            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-            <div class="stat-value">@Model.PendingApplications</div>
-            <div class="stat-label">Bekleyen Başvuru</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-green">
-            <div class="stat-icon"><i class="bi bi-trophy"></i></div>
-            <div class="stat-value">@Model.TotalOffered</div>
-            <div class="stat-label">Teklif Alınan</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-blue">
-            <div class="stat-icon"><i class="bi bi-journal-x"></i></div>
-            <div class="stat-value">@Model.PendingDailyLogs</div>
-            <div class="stat-label">Onay Bekleyen Günlük</div>
-        </div>
-    </div>
-</div>
+
 
 <!-- Onay Bekleyen Şirketler (varsa) -->
 @if (Model.PendingCompanies > 0)
@@ -81,7 +51,7 @@
 
 <!-- İlan & Şirket Özeti -->
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center">
                 <i class="bi bi-building fs-2 text-primary"></i>
@@ -90,21 +60,12 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center">
                 <i class="bi bi-megaphone fs-2 text-success"></i>
                 <h4 class="mt-2 mb-0">@Model.ActiveJobPostings / @Model.TotalJobPostings</h4>
                 <small class="text-muted">Aktif / Toplam İlan</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-journal-check fs-2 text-info"></i>
-                <h4 class="mt-2 mb-0">@Model.TotalDailyLogs</h4>
-                <small class="text-muted">Toplam Günlük Kaydı</small>
             </div>
         </div>
     </div>
@@ -132,9 +93,21 @@
                         <div class="list-item-title">@log.Student?.FullName — @log.DayNumber. Gün</div>
                         <div class="list-item-sub">@log.LogDate.ToString("dd.MM.yyyy")</div>
                     </div>
-                    <span class="badge @(log.IsApprovedByAdmin ? "bg-success" : "bg-warning text-dark")">
-                        @(log.IsApprovedByAdmin ? "Onaylandı" : "Bekliyor")
-                    </span>
+                    @switch (log.Status)
+                    {
+                        case CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved:
+                            <span class="badge bg-success">Okul Onaylı</span>
+                            break;
+                        case CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved:
+                            <span class="badge bg-primary">İşveren Onaylı</span>
+                            break;
+                        case CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer:
+                            <span class="badge bg-info text-dark">İşverende</span>
+                            break;
+                        default:
+                            <span class="badge bg-secondary">@log.Status.ToString()</span>
+                            break;
+                    }
                 </div>
             }
         </div>
@@ -163,10 +136,17 @@
                     </div>
                     <span class="status-badge status-@app.Status.ToString().ToLower()">
                         @(app.Status switch {
-                            ApplicationStatus.Offered => "Teklif ✓",
-                            ApplicationStatus.InReview => "İncelemede",
+                            ApplicationStatus.SchoolPending => "Okul Onayı Bekliyor",
+                            ApplicationStatus.SchoolRevision => "Revize İstendi",
+                            ApplicationStatus.SchoolApproved => "Okul Onaylı",
+                            ApplicationStatus.PreScreening => "Ön Eleme",
+                            ApplicationStatus.AptitudeTest => "Test",
+                            ApplicationStatus.LanguageTest => "Dil Sınavı",
+                            ApplicationStatus.Interview => "Mülakat",
+                            ApplicationStatus.EmployerAccepted => "Kabul Edildi",
                             ApplicationStatus.Rejected => "Reddedildi",
-                            _ => "Bekliyor"
+                            ApplicationStatus.Completed => "Tamamlandı",
+                            _ => app.Status.ToString()
                         })
                     </span>
                 </div>

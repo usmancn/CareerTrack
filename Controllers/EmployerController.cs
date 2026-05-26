@@ -55,7 +55,7 @@ namespace CareerTrack.Controllers
                 TotalPostings = postings.Count,
                 ActivePostings = postings.Count(p => p.IsActive),
                 TotalApplications = applications.Count,
-                PendingApplications = applications.Count(a => a.Status == ApplicationStatus.Pending),
+                PendingApplications = applications.Count(a => a.Status == ApplicationStatus.SchoolApproved),
                 RecentPostings = await _context.JobPostings
                     .Where(jp => jp.EmployerId == user.Id)
                     .OrderByDescending(jp => jp.CreatedAt)
@@ -215,7 +215,7 @@ namespace CareerTrack.Controllers
             return RedirectToAction(nameof(Postings));
         }
 
-        // GET: /Employer/Applications
+        // GET: /Employer/Applications — İlanlara gelen başvurular
         public async Task<IActionResult> Applications()
         {
             var user = await GetCurrentUserAsync();
@@ -224,7 +224,7 @@ namespace CareerTrack.Controllers
             var apps = await _context.JobApplications
                 .Include(a => a.Student)
                 .Include(a => a.Company)
-                .Include(a => a.Interviews)
+                .Include(a => a.ToDos) // Öğrencinin aşama görevleri
                 .Where(a => a.CompanyId == user.CompanyId.Value)
                 .OrderByDescending(a => a.ApplicationDate)
                 .ToListAsync();
@@ -235,7 +235,62 @@ namespace CareerTrack.Controllers
         // POST: /Employer/UpdateApplicationStatus
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateApplicationStatus(int id, ApplicationStatus status)
+        public async Task<IActionResult> UpdateApplicationStatus(int id, ApplicationStatus status, string? employerNote)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user.CompanyId == null) return Forbid();
+
+            var app = await _context.JobApplications
+                .Include(a => a.Company)
+                .FirstOrDefaultAsync(a => a.Id == id && a.CompanyId == user.CompanyId.Value);
+
+            if (app == null) return NotFound();
+
+            var prevStatus = app.Status;
+            app.Status = status;
+            
+            if (!string.IsNullOrEmpty(employerNote))
+                app.EmployerNote = employerNote;
+
+            // Aşama değişince öğrenciye otomatik ToDo ekle
+            if (status != prevStatus)
+            {
+                string? todoTitle = status switch
+                {
+                    ApplicationStatus.PreScreening  => $"[{app.Company?.Name}] Ön Eleme Aşamasına Girdiniz — Başvurunuzu Takip Edin",
+                    ApplicationStatus.AptitudeTest  => $"[{app.Company?.Name}] Genel Yetenek Testine Girmeniz Bekleniyor",
+                    ApplicationStatus.LanguageTest  => $"[{app.Company?.Name}] İngilizce Sınavına Girmeniz Bekleniyor",
+                    ApplicationStatus.Interview     => $"[{app.Company?.Name}] Mülakata Girmeniz Bekleniyor",
+                    ApplicationStatus.EmployerAccepted => $"[{app.Company?.Name}] Staj Teklifini Kabul Ettiniz — Okul Onayı Bekleniyor",
+                    ApplicationStatus.Rejected      => $"[{app.Company?.Name}] Başvurunuz Sonuçlandı — Yeni Başvuruları İnceleyin",
+                    _ => null
+                };
+
+                if (todoTitle != null)
+                {
+                    var todo = new ToDo
+                    {
+                        StudentId = app.StudentId,
+                        JobApplicationId = app.Id, // Bağlantı kuruldu
+                        TaskTitle = todoTitle,
+                        DueDate = DateTime.Today.AddDays(7),
+                        IsCompleted = false,
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.ToDos.Add(todo);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Aşama başarıyla güncellendi ve öğrenciye bildirildi.";
+            return RedirectToAction(nameof(Applications));
+        }
+
+        // POST: /Employer/EvaluateApplication
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EvaluateApplication(int id, string? evaluationResult, int? score, string? employerNote)
         {
             var user = await GetCurrentUserAsync();
             if (user.CompanyId == null) return Forbid();
@@ -245,19 +300,146 @@ namespace CareerTrack.Controllers
 
             if (app == null) return NotFound();
 
-            app.Status = status;
-            await _context.SaveChangesAsync();
-
-            var statusText = status switch
+            var stageName = app.Status switch
             {
-                ApplicationStatus.Pending => "Bekliyor",
-                ApplicationStatus.InReview => "Değerlendirmede",
-                ApplicationStatus.Rejected => "Reddedildi",
-                ApplicationStatus.Offered => "Teklif Gönderildi",
-                _ => status.ToString()
+                ApplicationStatus.PreScreening => "Ön Eleme",
+                ApplicationStatus.AptitudeTest => "Genel Yetenek Testi",
+                ApplicationStatus.LanguageTest => "İngilizce Sınavı",
+                ApplicationStatus.Interview => "Mülakat",
+                _ => ""
             };
 
-            TempData["Success"] = $"Başvuru durumu '{statusText}' olarak güncellendi.";
+            var finalNoteList = new List<string>();
+            if (!string.IsNullOrEmpty(stageName) && !string.IsNullOrEmpty(evaluationResult))
+                finalNoteList.Add($"[{stageName}] Sonucu: {evaluationResult}");
+            
+            if (score.HasValue)
+                finalNoteList.Add($"Puan: {score.Value}");
+                
+            if (!string.IsNullOrEmpty(employerNote))
+                finalNoteList.Add($"Not: {employerNote}");
+
+            if (finalNoteList.Any())
+                app.EmployerNote = string.Join(" | ", finalNoteList);
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Değerlendirme sonuçları başarıyla kaydedildi.";
+            return RedirectToAction(nameof(Applications));
+        }
+
+
+
+        // GET: /Employer/DailyLogs — Sadece SchoolApproved başvuruların günlükleri
+        public async Task<IActionResult> DailyLogs()
+        {
+            var user = await GetCurrentUserAsync();
+            if (user.CompanyId == null) return RedirectToAction(nameof(Index));
+
+            // Öğrenci işverene göndermiş (SentToEmployer) günlükleri göster
+            var logs = await _context.DailyLogs
+                .Include(d => d.Student)
+                .Include(d => d.JobApplication)
+                .Where(d => d.JobApplication!.CompanyId == user.CompanyId.Value &&
+                            d.Status >= DailyLogStatus.SentToEmployer)
+                .OrderBy(d => d.Status == DailyLogStatus.SentToEmployer ? 0 : 1)
+                .ThenByDescending(d => d.LogDate)
+                .ToListAsync();
+
+            return View(logs);
+        }
+
+        // POST: /Employer/ApproveLog
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveLog(int id, string? employerNote, bool approve)
+        {
+            var user = await GetCurrentUserAsync();
+            var log = await _context.DailyLogs
+                .Include(d => d.JobApplication)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
+            if (log == null || log.JobApplication?.CompanyId != user.CompanyId) return NotFound();
+
+            if (approve)
+            {
+                log.IsEmployerApproved = true;
+                log.Status = DailyLogStatus.EmployerApproved; // Artık okula gidecek
+            }
+            else
+            {
+                log.IsEmployerApproved = false;
+                log.Status = DailyLogStatus.EmployerRejected; // Öğrenciye geri döner
+            }
+            log.EmployerNote = employerNote;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = approve ? "Günlük onaylandı ve okula iletildi." : "Günlük revize edilmesi için öğrenciye geri gönderildi.";
+            return RedirectToAction(nameof(DailyLogs));
+        }
+
+        // GET: /Employer/Tasks
+        public async Task<IActionResult> Tasks()
+        {
+            var user = await GetCurrentUserAsync();
+            if (user.CompanyId == null) return RedirectToAction(nameof(Index));
+
+            var tasks = await _context.StudentTasks
+                .Include(t => t.JobApplication)
+                    .ThenInclude(a => a!.Student)
+                .Where(t => t.JobApplication!.CompanyId == user.CompanyId.Value)
+                .OrderBy(t => t.IsCompleted)
+                .ThenByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            var activeInterns = await _context.JobApplications
+                .Include(a => a.Student)
+                .Where(a => a.CompanyId == user.CompanyId.Value && a.Status == ApplicationStatus.SchoolApproved)
+                .Select(a => new { a.Id, Name = $"{a.Student!.FullName} - {a.Position}" })
+                .ToListAsync();
+
+            ViewBag.ActiveInterns = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(activeInterns, "Id", "Name");
+
+            return View(tasks);
+        }
+
+        // POST: /Employer/AssignTask
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignTask(int jobApplicationId, string title, string? description, DateTime? dueDate)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user.CompanyId == null) return Forbid();
+
+            var app = await _context.JobApplications
+                .FirstOrDefaultAsync(a => a.Id == jobApplicationId && a.CompanyId == user.CompanyId.Value);
+
+            if (app == null || app.Status != ApplicationStatus.SchoolApproved)
+            {
+                TempData["Error"] = "Sadece okul onaylı stajlardaki öğrencilere görev atanabilir.";
+                return RedirectToAction(nameof(Applications));
+            }
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                TempData["Error"] = "Görev başlığı zorunludur.";
+                return RedirectToAction(nameof(Applications));
+            }
+
+            var task = new StudentTask
+            {
+                JobApplicationId = app.Id,
+                AssignedByEmployerId = user.Id,
+                Title = title,
+                Description = description,
+                DueDate = dueDate,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.StudentTasks.Add(task);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Görev başarıyla atandı.";
             return RedirectToAction(nameof(Applications));
         }
     }

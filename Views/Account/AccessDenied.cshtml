@@ -1,9 +1,42 @@
+@using CareerTrack.Models.Constants
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<CareerTrack.Models.Entities.ApplicationUser> UserManager
 @{
     ViewData["Title"] = "Erişim Reddedildi";
+
+    // Rolüne göre doğru panele yönlendir
+    string homeController = "Dashboard";
+    string homeAction = "Index";
+    string roleLabel = "Öğrenci";
+
+    if (User.IsInRole(AppRoles.Admin)) { homeController = "Admin"; roleLabel = "Admin"; }
+    else if (User.IsInRole(AppRoles.School)) { homeController = "School"; roleLabel = "Okul Koordinatörü"; }
+    else if (User.IsInRole(AppRoles.Employer)) { homeController = "Employer"; roleLabel = "İşveren"; }
 }
+
 <div class="text-center py-5">
-    <i class="bi bi-shield-lock-fill text-danger" style="font-size:4rem;"></i>
-    <h2 class="mt-3">Erişim Reddedildi</h2>
-    <p class="text-muted">Bu sayfayı görüntüleme yetkiniz bulunmamaktadır.</p>
-    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">Ana Sayfaya Dön</a>
+    <div class="mb-4">
+        <i class="bi bi-shield-lock-fill text-danger" style="font-size:5rem; opacity:0.85;"></i>
+    </div>
+    <h2 class="fw-bold mb-2">Erişim Reddedildi</h2>
+    <p class="text-muted mb-1">Bu sayfayı görüntüleme yetkiniz bulunmamaktadır.</p>
+    <p class="text-muted small mb-4">
+        Oturum açık hesabınız: <strong>@roleLabel</strong> rolüne sahip.
+        Bu rol bu sayfaya erişemez.
+    </p>
+
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a asp-controller="@homeController" asp-action="@homeAction" class="btn btn-primary">
+            <i class="bi bi-house-fill me-2"></i>Kendi Paneline Dön
+        </a>
+        <a asp-controller="Account" asp-action="Logout"
+           onclick="event.preventDefault(); document.getElementById('logoutForm').submit();"
+           class="btn btn-outline-danger">
+            <i class="bi bi-person-slash me-2"></i>Farklı Hesapla Giriş Yap
+        </a>
+    </div>
+
+    <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
 </div>
