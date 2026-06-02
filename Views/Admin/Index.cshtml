@@ -1,6 +1,8 @@
 @model CareerTrack.Models.ViewModels.AdminDashboardViewModel
 @{
     ViewData["Title"] = "Admin Dashboard";
+    var approvedCompanies = Math.Max(0, Model.TotalCompanies - Model.PendingCompanies);
+    var inactiveJobPostings = Math.Max(0, Model.TotalJobPostings - Model.ActiveJobPostings);
 }
 
 <!-- Üst Satır: Kullanıcı & Sistem Özeti -->
@@ -70,28 +72,75 @@
     </div>
 </div>
 
-<!-- Gelişmiş LINQ Raporu: Aşamalara Göre Başvuru Dağılımı -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-transparent border-0 pt-4 pb-2">
-        <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-line text-primary me-2"></i>Aşamalara Göre Staj Başvuru Dağılımı</h6>
-    </div>
-    <div class="card-body">
-        @if (Model.ApplicationStatusStats.Any())
-        {
-            <div class="d-flex flex-wrap gap-2">
-                @foreach (var stat in Model.ApplicationStatusStats.OrderByDescending(x => x.Value))
-                {
-                    <div class="stat-card stat-blue p-3 d-flex flex-column align-items-center justify-content-center" style="min-width: 150px; height: auto;">
-                        <span class="fs-3 fw-bold text-white mb-1">@stat.Value</span>
-                        <span class="small text-secondary text-uppercase" style="letter-spacing: 0.5px;">@stat.Key</span>
-                    </div>
-                }
+<div class="row g-4 mb-4 dashboard-graphs">
+    <div class="col-xl-7">
+        <div class="chart-card h-100" data-chart-card>
+            <div class="chart-header">
+                <div>
+                    <span class="chart-kicker">Sistem raporu</span>
+                    <h3>Başvuru Aşamaları</h3>
+                </div>
+                <i class="bi bi-diagram-3"></i>
             </div>
-        }
-        else
-        {
-            <p class="text-muted small mb-0">Henüz başvuru verisi bulunmuyor.</p>
-        }
+            @if (Model.ApplicationStatusStats.Any())
+            {
+                <div class="chart-bars chart-bars-dense" data-chart-bars>
+                    @foreach (var stat in Model.ApplicationStatusStats.OrderByDescending(x => x.Value))
+                    {
+                        <div class="chart-bar-row" data-chart-value="@stat.Value" data-bs-toggle="tooltip" data-bs-title="@stat.Key aşamasındaki toplam başvuru">
+                            <span>@stat.Key</span>
+                            <div class="chart-bar-track"><span class="chart-bar-fill"></span></div>
+                            <strong data-chart-number>@stat.Value</strong>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state py-4"><i class="bi bi-bar-chart"></i><p>Henüz başvuru verisi bulunmuyor.</p></div>
+            }
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="chart-card h-100 chart-focus-card" data-chart-card>
+            <div class="chart-header">
+                <div>
+                    <span class="chart-kicker">Operasyon sağlığı</span>
+                    <h3>Şirket ve İlan Akışı</h3>
+                </div>
+                <i class="bi bi-activity"></i>
+            </div>
+            <div class="chart-donut-wrap">
+                <div class="chart-donut" data-chart-donut data-chart-value="@approvedCompanies" data-chart-total="@Math.Max(1, Model.TotalCompanies)">
+                    <div class="chart-donut-core">
+                        <strong class="count-anim">@approvedCompanies</strong>
+                        <span>onaylı şirket</span>
+                    </div>
+                </div>
+                <div class="pipeline-graph">
+                    <div class="pipeline-step">
+                        <i class="bi bi-building-check"></i>
+                        <strong>@approvedCompanies</strong>
+                        <span>Onaylı şirket</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <i class="bi bi-hourglass-split"></i>
+                        <strong>@Model.PendingCompanies</strong>
+                        <span>Onay bekliyor</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <i class="bi bi-megaphone"></i>
+                        <strong>@Model.ActiveJobPostings</strong>
+                        <span>Aktif ilan</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <i class="bi bi-pause-circle"></i>
+                        <strong>@inactiveJobPostings</strong>
+                        <span>Pasif ilan</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

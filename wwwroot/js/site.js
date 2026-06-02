@@ -1,211 +1,480 @@
-/**
- * CareerTrack — site.js
- * Premium interactive script layer utilizing Anime.js for transitions, 
- * side-drawers, custom toast systems, and stagger layout entries.
- */
+(function () {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-document.addEventListener('DOMContentLoaded', function () {
-    // ════════════════════════════════════════════════
-    // 1. SIDEBAR & LAYOUT COLLAPSE
-    // ════════════════════════════════════════════════
-    const sidebar = document.getElementById('sidebar');
-    const toggle = document.querySelector('[data-sidebar-toggle]');
-    const mobileQuery = window.matchMedia('(max-width: 768px)');
+    function ready(callback) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', callback);
+        } else {
+            callback();
+        }
+    }
 
-    if (sidebar && toggle) {
-        toggle.addEventListener('click', function () {
-            if (mobileQuery.matches) {
-                sidebar.classList.toggle('mobile-open');
-                sidebar.classList.remove('collapsed');
-            } else {
-                sidebar.classList.toggle('collapsed');
-                sidebar.classList.remove('mobile-open');
-                
-                // Animate content shift slightly for ultra-smoothness
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent) {
-                    anime({
-                        targets: mainContent,
-                        marginLeft: sidebar.classList.contains('collapsed') ? '0px' : '260px',
-                        duration: 350,
-                        easing: 'easeOutQuint'
-                    });
-                }
-            }
-        });
+    function initMotionField() {
+        if (reduceMotion) return;
 
-        document.addEventListener('click', function (event) {
-            if (!mobileQuery.matches || !sidebar.classList.contains('mobile-open')) return;
-            if (sidebar.contains(event.target) || toggle.contains(event.target)) return;
+        const shell = document.querySelector('[data-motion-shell]');
+        if (!shell) return;
+
+        let rafId = 0;
+        let pointerX = window.innerWidth / 2;
+        let pointerY = window.innerHeight / 2;
+
+        function applyMotion() {
+            const x = ((pointerX / window.innerWidth) - 0.5) * 22;
+            const y = ((pointerY / window.innerHeight) - 0.5) * 18;
+            shell.style.setProperty('--motion-x', `${x.toFixed(2)}px`);
+            shell.style.setProperty('--motion-y', `${y.toFixed(2)}px`);
+            rafId = 0;
+        }
+
+        window.addEventListener('pointermove', (event) => {
+            pointerX = event.clientX;
+            pointerY = event.clientY;
+            if (!rafId) rafId = window.requestAnimationFrame(applyMotion);
+        }, { passive: true });
+    }
+
+    function initSidebar() {
+        const sidebar = document.querySelector('[data-app-sidebar]');
+        const toggle = document.querySelector('[data-sidebar-toggle]');
+        const backdrop = document.querySelector('[data-sidebar-backdrop]');
+        if (!sidebar || !toggle) return;
+
+        const closeMobileSidebar = () => {
             sidebar.classList.remove('mobile-open');
+            backdrop?.classList.remove('is-visible');
+        };
+
+        toggle.addEventListener('click', () => {
+            const isOpen = sidebar.classList.toggle('mobile-open');
+            backdrop?.classList.toggle('is-visible', isOpen);
+        });
+
+        backdrop?.addEventListener('click', closeMobileSidebar);
+
+        sidebar.querySelectorAll('a.nav-link').forEach((link) => {
+            link.addEventListener('click', closeMobileSidebar);
         });
     }
 
-    // ════════════════════════════════════════════════
-    // 2. DASHBOARD ANIMATIONS (Staggers & Counters)
-    // ════════════════════════════════════════════════
-    // Staggered load for cards
-    const staggerCards = document.querySelectorAll('.stagger-card, .stat-card, .list-item, .log-card');
-    if (staggerCards.length > 0) {
-        anime({
-            targets: staggerCards,
-            translateY: [20, 0],
-            opacity: [0, 1],
-            delay: anime.stagger(60, { start: 100 }),
-            duration: 800,
-            easing: 'easeOutQuart'
+    function initReveal() {
+        if (reduceMotion) return;
+
+        const candidates = Array.from(document.querySelectorAll(
+            '.page-toolbar, .welcome-banner, .stat-card, .chart-card, .card-section, .table-card, .form-card, .detail-card, .log-card, .posting-card, .empty-state-full, .stagger-item, .stagger-card'
+        ));
+
+        candidates.forEach((el, index) => {
+            el.classList.add('reveal-on-load');
+            el.style.transitionDelay = `${Math.min(index * 42, 360)}ms`;
         });
+
+        if (!('IntersectionObserver' in window)) {
+            requestAnimationFrame(() => candidates.forEach((el) => el.classList.add('is-visible')));
+            return;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+            });
+        }, { threshold: 0.08, rootMargin: '0px 0px -20px 0px' });
+
+        candidates.forEach((el) => observer.observe(el));
     }
 
-    // Counter anim for stats
-    const counterElements = document.querySelectorAll('.count-anim');
-    counterElements.forEach(el => {
-        const targetValue = parseInt(el.textContent.trim(), 10) || 0;
-        el.textContent = '0';
-        
-        const countObj = { value: 0 };
-        anime({
-            targets: countObj,
-            value: targetValue,
-            round: 1,
-            duration: 1200,
-            easing: 'easeOutExpo',
-            update: function() {
-                el.textContent = countObj.value;
+    function initCounters() {
+        if (reduceMotion) return;
+
+        document.querySelectorAll('.count-anim').forEach((counter) => {
+            const target = parseInt(counter.textContent.trim(), 10);
+            if (!Number.isFinite(target) || target <= 0) return;
+
+            const duration = Math.min(1100, 520 + target * 16);
+            const startTime = performance.now();
+
+            function frame(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                counter.textContent = Math.round(target * eased).toString();
+
+                if (progress < 1) requestAnimationFrame(frame);
             }
-        });
-    });
 
-    // ════════════════════════════════════════════════
-    // 3. TOAST SYSTEM
-    // ════════════════════════════════════════════════
-    window.showPremiumToast = function(type, message) {
+            counter.textContent = '0';
+            requestAnimationFrame(frame);
+        });
+    }
+
+    function initCardMotion() {
+        if (reduceMotion || !window.matchMedia('(hover: hover)').matches) return;
+
+        const surfaces = document.querySelectorAll(
+            '.stat-card, .chart-card, .card-section, .table-card, .form-card, .detail-card, .log-card, .posting-card, .content-area > .card'
+        );
+
+        surfaces.forEach((surface) => {
+            surface.addEventListener('pointermove', (event) => {
+                const bounds = surface.getBoundingClientRect();
+                const x = (event.clientX - bounds.left) / bounds.width;
+                const y = (event.clientY - bounds.top) / bounds.height;
+                const tiltY = (x - 0.5) * 7;
+                const tiltX = (0.5 - y) * 6;
+
+                surface.style.setProperty('--tilt-x', `${tiltX.toFixed(2)}deg`);
+                surface.style.setProperty('--tilt-y', `${tiltY.toFixed(2)}deg`);
+                surface.classList.add('is-tilting');
+            });
+
+            surface.addEventListener('pointerleave', () => {
+                surface.classList.remove('is-tilting');
+                surface.style.setProperty('--tilt-x', '0deg');
+                surface.style.setProperty('--tilt-y', '0deg');
+            });
+        });
+    }
+
+    function initTodoFeedback() {
+        if (reduceMotion) return;
+
+        document.querySelectorAll('.btn-toggle, .btn-toggle-done').forEach((button) => {
+            button.addEventListener('click', () => {
+                const item = button.closest('.todo-list-item');
+                if (!item) return;
+                item.classList.add('is-completing');
+                window.setTimeout(() => item.classList.remove('is-completing'), 460);
+            });
+        });
+    }
+
+    function iconForToast(type) {
+        if (type === 'success') return 'bi-check-circle-fill';
+        if (type === 'warning') return 'bi-exclamation-circle-fill';
+        return 'bi-exclamation-triangle-fill';
+    }
+
+    window.showPremiumToast = function (type, message) {
         const container = document.getElementById('premium-toast-container');
-        if (!container) return;
+        if (!container || !message) return;
 
         const toast = document.createElement('div');
-        toast.className = `premium-toast toast-${type}`;
-        
-        const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
-        
-        toast.innerHTML = `
-            <div class="toast-body-content">
-                <i class="bi ${icon} toast-icon"></i>
-                <div class="toast-text-area">
-                    <div class="toast-title">${type.toUpperCase()}</div>
-                    <div class="toast-msg">${message}</div>
-                </div>
-                <button type="button" class="btn-toast-close"><i class="bi bi-x"></i></button>
-            </div>
-            <div class="toast-progress"></div>
-        `;
+        toast.className = `premium-toast toast-${type || 'success'}`;
+        toast.setAttribute('role', 'status');
 
+        const icon = document.createElement('i');
+        icon.className = `bi ${iconForToast(type)} toast-icon`;
+
+        const textArea = document.createElement('div');
+        textArea.className = 'toast-text-area';
+
+        const title = document.createElement('div');
+        title.className = 'toast-title';
+        title.textContent = type === 'error' ? 'Hata' : type === 'warning' ? 'Uyarı' : 'Başarılı';
+
+        const body = document.createElement('div');
+        body.className = 'toast-msg';
+        body.textContent = message;
+
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'btn-toast-close';
+        close.setAttribute('aria-label', 'Bildirimi kapat');
+        close.innerHTML = '<i class="bi bi-x-lg"></i>';
+
+        textArea.append(title, body);
+        toast.append(icon, textArea, close);
         container.appendChild(toast);
 
-        // Slide-in animation
-        anime({
-            targets: toast,
-            translateX: [150, 0],
-            opacity: [0, 1],
-            scale: [0.9, 1],
-            duration: 400,
-            easing: 'easeOutBack'
-        });
-
-        // Progress bar visual countdown
-        const progressBar = toast.querySelector('.toast-progress');
-        anime({
-            targets: progressBar,
-            width: ['100%', '0%'],
-            duration: 5000,
-            easing: 'linear'
-        });
-
-        // Auto close after 5 seconds
-        const dismissTimeout = setTimeout(() => {
-            closeToast(toast);
-        }, 5000);
-
-        // Manual close action
-        toast.querySelector('.btn-toast-close').addEventListener('click', () => {
-            clearTimeout(dismissTimeout);
-            closeToast(toast);
+        const dismiss = window.setTimeout(() => toast.remove(), 5400);
+        close.addEventListener('click', () => {
+            window.clearTimeout(dismiss);
+            toast.remove();
         });
     };
 
-    function closeToast(toast) {
-        anime({
-            targets: toast,
-            translateX: 150,
-            opacity: 0,
-            scale: 0.9,
-            duration: 350,
-            easing: 'easeInBack',
-            complete: function() {
-                toast.remove();
+    window.openPremiumDrawer = function (drawerId) {
+        const drawer = document.getElementById(drawerId);
+        if (!drawer) return;
+
+        drawer.style.display = 'block';
+        requestAnimationFrame(() => drawer.classList.add('is-open'));
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closePremiumDrawer = function (drawerId) {
+        const drawer = document.getElementById(drawerId);
+        if (!drawer) return;
+
+        drawer.classList.remove('is-open');
+        document.body.style.overflow = '';
+
+        window.setTimeout(() => {
+            if (!drawer.classList.contains('is-open')) {
+                drawer.style.display = 'none';
             }
+        }, reduceMotion ? 0 : 320);
+    };
+
+    function initDrawers() {
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            document.querySelectorAll('.premium-drawer.is-open').forEach((drawer) => {
+                window.closePremiumDrawer(drawer.id);
+            });
         });
     }
 
-    // ════════════════════════════════════════════════
-    // 4. GLASS SLIDING DRAWERS
-    // ════════════════════════════════════════════════
-    window.openPremiumDrawer = function(drawerId) {
-        const drawer = document.getElementById(drawerId);
-        if (!drawer) return;
+    window.togglePassword = function () {
+        const input = document.getElementById('passwordInput');
+        const icon = document.getElementById('eyeIcon');
+        if (!input || !icon) return;
 
-        // Ensure visible display
-        drawer.style.display = 'block';
-
-        // Blur layout/backdrop overlay animation
-        const overlay = drawer.querySelector('.drawer-overlay');
-        if (overlay) {
-            anime({
-                targets: overlay,
-                opacity: [0, 1],
-                duration: 300,
-                easing: 'easeOutQuad'
-            });
-        }
-
-        // Drawer sliding from right
-        const content = drawer.querySelector('.drawer-content');
-        if (content) {
-            anime({
-                targets: content,
-                translateX: ['100%', '0%'],
-                opacity: [0, 1],
-                duration: 450,
-                easing: 'easeOutQuint'
-            });
-        }
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        icon.classList.toggle('bi-eye', !show);
+        icon.classList.toggle('bi-eye-slash', show);
     };
 
-    window.closePremiumDrawer = function(drawerId) {
-        const drawer = document.getElementById(drawerId);
-        if (!drawer) return;
+    function initBootstrapWidgets() {
+        if (!window.bootstrap) return;
 
-        const overlay = drawer.querySelector('.drawer-overlay');
-        const content = drawer.querySelector('.drawer-content');
-
-        // Slide content back to right
-        anime({
-            targets: content,
-            translateX: '100%',
-            opacity: 0,
-            duration: 350,
-            easing: 'easeInQuint'
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
+            window.bootstrap.Tooltip.getOrCreateInstance(el);
         });
 
-        // Fade backdrop overlay out
-        anime({
-            targets: overlay,
-            opacity: 0,
-            duration: 300,
-            easing: 'easeInQuad',
-            complete: function() {
-                drawer.style.display = 'none';
+        document.querySelectorAll('[data-bs-toggle="pill"]').forEach((el) => {
+            window.bootstrap.Tab.getOrCreateInstance(el);
+        });
+    }
+
+    function roleMeta(role) {
+        const map = {
+            admin: {
+                icon: 'bi-shield-lock-fill',
+                caption: 'Admin kontrol akışı hazır'
+            },
+            school: {
+                icon: 'bi-bank2',
+                caption: 'Okul onay akışı hazır'
+            },
+            employer: {
+                icon: 'bi-building-fill',
+                caption: 'İşveren süreç akışı hazır'
+            },
+            student: {
+                icon: 'bi-mortarboard-fill',
+                caption: 'Öğrenci akışı hazır'
             }
+        };
+
+        return map[role] || map.student;
+    }
+
+    function applyAuthRole(role) {
+        const shell = document.querySelector('.login-orchestra');
+        if (!shell) return;
+
+        shell.dataset.authRole = role;
+        shell.classList.remove('auth-burst');
+        requestAnimationFrame(() => shell.classList.add('auth-burst'));
+
+        const meta = roleMeta(role);
+        const icon = document.querySelector('#loginRoleIcon i');
+        const caption = document.getElementById('loginRoleCaption');
+
+        if (icon) {
+            icon.className = `bi ${meta.icon} glow-icon`;
+        }
+        if (caption) {
+            caption.textContent = meta.caption;
+        }
+
+        window.setTimeout(() => shell.classList.remove('auth-burst'), reduceMotion ? 0 : 700);
+    }
+
+    function initAuthRolePicker() {
+        const triggers = document.querySelectorAll('[data-auth-role-trigger]');
+        if (!triggers.length) return;
+
+        triggers.forEach((trigger) => {
+            trigger.addEventListener('shown.bs.tab', () => {
+                applyAuthRole(trigger.dataset.role || 'student');
+            });
+
+            trigger.addEventListener('mouseenter', () => {
+                if (reduceMotion) return;
+                applyAuthRole(trigger.dataset.role || 'student');
+            });
         });
-    };
-});
+
+        const active = document.querySelector('[data-auth-role-trigger].active');
+        if (active) applyAuthRole(active.dataset.role || 'student');
+    }
+
+    function initDemoLogin() {
+        document.querySelectorAll('.btn-demo[data-email][data-pass]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const email = document.getElementById('emailInput');
+                const password = document.getElementById('passwordInput');
+                const form = document.getElementById('loginForm');
+                if (!email || !password || !form) return;
+
+                const role = button.dataset.role || 'student';
+                applyAuthRole(role);
+                button.classList.add('is-pressed');
+                email.value = button.dataset.email || '';
+                password.value = button.dataset.pass || '';
+
+                if (window.bootstrap && button.matches('[data-bs-toggle="pill"]')) {
+                    window.bootstrap.Tab.getOrCreateInstance(button).show();
+                }
+
+                const submitDelay = reduceMotion ? 0 : 780;
+                window.setTimeout(() => form.submit(), submitDelay);
+            });
+        });
+    }
+
+    function animateNumber(el, target, duration) {
+        if (reduceMotion) {
+            el.textContent = Math.round(target).toString();
+            return;
+        }
+
+        const start = performance.now();
+        function frame(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(target * eased).toString();
+            if (progress < 1) requestAnimationFrame(frame);
+        }
+        el.textContent = '0';
+        requestAnimationFrame(frame);
+    }
+
+    function initDashboardCharts() {
+        const barGroups = document.querySelectorAll('[data-chart-bars]');
+        if (barGroups.length || document.querySelector('[data-chart-donut]')) {
+            document.documentElement.dataset.chartsReady = 'true';
+        }
+
+        barGroups.forEach((group) => {
+            const rows = Array.from(group.querySelectorAll('[data-chart-value]'));
+            const values = rows.map((row) => Number(row.dataset.chartValue || 0));
+            const max = Math.max(1, ...values);
+
+            rows.forEach((row, index) => {
+                const value = Number(row.dataset.chartValue || 0);
+                const percent = value <= 0 ? 2 : Math.max(8, (value / max) * 100);
+                row.style.setProperty('--chart-percent', `${percent.toFixed(2)}%`);
+                row.style.setProperty('--chart-delay', `${index * 90}ms`);
+
+                const number = row.querySelector('[data-chart-number]');
+                if (number) animateNumber(number, value, 720 + index * 90);
+            });
+
+            requestAnimationFrame(() => group.classList.add('chart-ready'));
+        });
+
+        document.querySelectorAll('[data-chart-donut]').forEach((donut) => {
+            const value = Math.max(0, Number(donut.dataset.chartValue || 0));
+            const total = Math.max(1, Number(donut.dataset.chartTotal || 1));
+            const targetAngle = Math.min(360, (value / total) * 360);
+
+            if (reduceMotion) {
+                donut.style.setProperty('--donut-angle', `${targetAngle.toFixed(2)}deg`);
+                return;
+            }
+
+            const start = performance.now();
+            function frame(now) {
+                const progress = Math.min((now - start) / 920, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                donut.style.setProperty('--donut-angle', `${(targetAngle * eased).toFixed(2)}deg`);
+                if (progress < 1) requestAnimationFrame(frame);
+            }
+            requestAnimationFrame(frame);
+        });
+    }
+
+    function initInlineActionForms() {
+        document.querySelectorAll('.application-status-form').forEach((form) => {
+            const select = form.querySelector('select');
+            select?.addEventListener('change', () => {
+                form.classList.add('is-dirty');
+            });
+
+            form.addEventListener('submit', () => {
+                form.classList.add('is-submitting');
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Kaydediliyor';
+                }
+            });
+        });
+
+        document.querySelectorAll('.table-input[form^="company-edit-"]').forEach((input) => {
+            input.addEventListener('input', () => {
+                input.closest('tr')?.classList.add('is-edited');
+            });
+        });
+    }
+
+    function initRolePicker() {
+        const radios = document.querySelectorAll('input[name="Role"]');
+        const employerNote = document.getElementById('employerNote');
+        const departmentField = document.getElementById('departmentField');
+        if (!radios.length || !departmentField) return;
+
+        function applyRole(value) {
+            const input = departmentField.querySelector('input');
+            const label = departmentField.querySelector('label');
+            const icon = departmentField.querySelector('i');
+
+            employerNote?.classList.toggle('d-none', value !== 'Employer');
+            departmentField.classList.remove('role-shift');
+            requestAnimationFrame(() => departmentField.classList.add('role-shift'));
+
+            if (input) input.placeholder = value === 'Employer' ? 'İnsan Kaynakları / Departman' : 'Bilgisayar Mühendisliği';
+            if (label) label.textContent = value === 'Employer' ? 'Departman' : 'Bölüm';
+            if (icon) {
+                icon.classList.toggle('bi-briefcase', value === 'Employer');
+                icon.classList.toggle('bi-mortarboard', value !== 'Employer');
+            }
+        }
+
+        radios.forEach((radio) => {
+            radio.addEventListener('change', () => applyRole(radio.value));
+            if (radio.checked) applyRole(radio.value);
+        });
+    }
+
+    function initFormFocus() {
+        document.querySelectorAll('.input-glass-wrapper input, .input-glass-wrapper select, .input-glass-wrapper textarea').forEach((field) => {
+            const wrapper = field.closest('.input-glass-wrapper');
+            if (!wrapper) return;
+
+            field.addEventListener('focus', () => wrapper.classList.add('is-focused'));
+            field.addEventListener('blur', () => wrapper.classList.remove('is-focused'));
+        });
+    }
+
+    ready(() => {
+        initMotionField();
+        initSidebar();
+        initReveal();
+        initCounters();
+        initCardMotion();
+        initTodoFeedback();
+        initDrawers();
+        initBootstrapWidgets();
+        initAuthRolePicker();
+        initDemoLogin();
+        initDashboardCharts();
+        initInlineActionForms();
+        initRolePicker();
+        initFormFocus();
+    });
+})();

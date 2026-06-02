@@ -3,9 +3,28 @@
     ViewData["Title"] = "Kayıt Ol";
 }
 
-<!-- Ultra-Modern Minimal Auth Layout -->
 <div class="auth-modern-container">
-    <div class="auth-particles" id="authParticles"></div>
+    <div class="auth-kinetic-map" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div class="auth-storyboard" aria-hidden="true">
+        <div class="story-stage story-stage-a">
+            <i class="bi bi-person-plus"></i>
+            <span>Kayıt</span>
+        </div>
+        <div class="story-stage story-stage-b">
+            <i class="bi bi-diagram-3"></i>
+            <span>Rol</span>
+        </div>
+        <div class="story-stage story-stage-c">
+            <i class="bi bi-stars"></i>
+            <span>Başlangıç</span>
+        </div>
+    </div>
     
     <div class="auth-modern-card" style="max-height: 95vh; overflow-y: auto;">
         <div class="auth-modern-header">
@@ -108,91 +127,4 @@
 
 @section Scripts {
     <partial name="_ValidationScripts" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script>
-        const radios = document.querySelectorAll('input[name="Role"]');
-        const employerNote = document.getElementById('employerNote');
-        const deptField = document.getElementById('departmentField');
-
-        radios.forEach(r => r.addEventListener('change', function () {
-            // Animasyonlu geçiş
-            anime({
-                targets: deptField,
-                opacity: [0, 1],
-                translateX: [10, 0],
-                duration: 400,
-                easing: 'easeOutQuad'
-            });
-
-            if (this.value === 'Employer') {
-                employerNote.classList.remove('d-none');
-                deptField.querySelector('input').placeholder = 'İnsan Kaynakları / İK';
-                deptField.querySelector('label').innerText = 'Departman';
-                deptField.querySelector('i').classList.replace('bi-mortarboard', 'bi-briefcase');
-            } else {
-                employerNote.classList.add('d-none');
-                deptField.querySelector('input').placeholder = 'Bilgisayar Mühendisliği';
-                deptField.querySelector('label').innerText = 'Bölüm';
-                deptField.querySelector('i').classList.replace('bi-briefcase', 'bi-mortarboard');
-            }
-            
-            // Etiket stilini güncelle
-            document.querySelectorAll('label[for^="role"]').forEach(lbl => {
-                lbl.classList.replace('btn-primary', 'btn-secondary-premium');
-                lbl.classList.replace('btn-success', 'btn-secondary-premium');
-                lbl.style.background = '';
-                lbl.style.color = '';
-            });
-            
-            const selectedLabel = document.querySelector(`label[for="${this.id}"]`);
-            if(this.value === 'Student') {
-                selectedLabel.classList.replace('btn-secondary-premium', 'btn-primary');
-            } else {
-                selectedLabel.classList.replace('btn-secondary-premium', 'btn-success');
-            }
-        }));
-        
-        // Initial set style for default checked
-        document.querySelector('label[for="roleStudent"]').classList.replace('btn-secondary-premium', 'btn-primary');
-
-        // Background Particles & Staggering
-        document.addEventListener('DOMContentLoaded', () => {
-            // Animating main card
-            anime({
-                targets: '.auth-modern-card',
-                translateY: [20, 0],
-                opacity: [0, 1],
-                duration: 800,
-                easing: 'easeOutExpo'
-            });
-
-            // Particles
-            const container = document.getElementById('authParticles');
-            const particleCount = 15;
-            
-            for(let i=0; i<particleCount; i++) {
-                const p = document.createElement('div');
-                p.classList.add('particle-glow');
-                const size = Math.random() * 300 + 100;
-                p.style.width = `${size}px`;
-                p.style.height = `${size}px`;
-                p.style.left = `${Math.random() * 100}%`;
-                p.style.top = `${Math.random() * 100}%`;
-                container.appendChild(p);
-            }
-            
-            anime({
-                targets: '.particle-glow',
-                translateX: () => anime.random(-150, 150),
-                translateY: () => anime.random(-150, 150),
-                scale: () => anime.random(0.8, 1.2),
-                opacity: () => anime.random(0.1, 0.4),
-                duration: () => anime.random(6000, 12000),
-                direction: 'alternate',
-                loop: true,
-                easing: 'easeInOutSine'
-            });
-        });
-    </script>
 }
-

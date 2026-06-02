@@ -3,24 +3,118 @@
     ViewData["Title"] = "Giriş Yap";
 }
 
-<!-- Ultra-Modern Minimal Auth Layout -->
-<div class="auth-modern-container">
-    <div class="auth-particles" id="authParticles"></div>
-    
-    <div class="auth-modern-card">
-        <div class="auth-modern-header">
-            <div class="logo-wrapper">
-                <i class="bi bi-briefcase-fill glow-icon"></i>
+<div class="auth-modern-container login-orchestra" data-auth-role="student">
+    <div class="auth-kinetic-map" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <section class="auth-command-stage" aria-label="Rol ön izlemesi">
+        <div class="auth-stage-header">
+            <span class="auth-stage-kicker">CareerTrack</span>
+            <h1>Rolünü seç, akış canlansın.</h1>
+            <p>Admin, okul, işveren ve öğrenci girişleri kendi süreç animasyonu ile yüklenir.</p>
+        </div>
+
+        <div class="tab-content auth-role-panels">
+            <div class="tab-pane fade" id="roleAdminPanel" role="tabpanel">
+                <div class="auth-role-panel auth-role-admin">
+                    <div class="role-panel-title">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>Admin Kontrol Merkezi</span>
+                    </div>
+                    <div class="role-motion role-motion-admin" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="role-panel-grid">
+                        <span>Kullanıcı rolleri</span>
+                        <span>Şirket onayı</span>
+                        <span>Başvuru aşamaları</span>
+                    </div>
+                </div>
             </div>
-            <h2>CareerTrack</h2>
-            <p>Hesabınıza erişmek için bilgilerinizi girin</p>
+
+            <div class="tab-pane fade" id="roleSchoolPanel" role="tabpanel">
+                <div class="auth-role-panel auth-role-school">
+                    <div class="role-panel-title">
+                        <i class="bi bi-bank2"></i>
+                        <span>Okul Onay Akışı</span>
+                    </div>
+                    <div class="role-motion role-motion-school" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="role-panel-grid">
+                        <span>Öğrenci takibi</span>
+                        <span>Günlük inceleme</span>
+                        <span>Staj uygunluğu</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="roleEmployerPanel" role="tabpanel">
+                <div class="auth-role-panel auth-role-employer">
+                    <div class="role-panel-title">
+                        <i class="bi bi-building-fill"></i>
+                        <span>İşveren Süreç Masası</span>
+                    </div>
+                    <div class="role-motion role-motion-employer" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="role-panel-grid">
+                        <span>İlan yayını</span>
+                        <span>Aday değerlendirme</span>
+                        <span>Görev atama</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade show active" id="roleStudentPanel" role="tabpanel">
+                <div class="auth-role-panel auth-role-student">
+                    <div class="role-panel-title">
+                        <i class="bi bi-mortarboard-fill"></i>
+                        <span>Öğrenci Yol Haritası</span>
+                    </div>
+                    <div class="role-motion role-motion-student" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="role-panel-grid">
+                        <span>Başvuru</span>
+                        <span>Mülakat</span>
+                        <span>Staj defteri</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-flow-strip" aria-hidden="true">
+            <span class="flow-node is-active"></span>
+            <span class="flow-line"></span>
+            <span class="flow-node"></span>
+            <span class="flow-line"></span>
+            <span class="flow-node"></span>
+            <span class="flow-line"></span>
+            <span class="flow-node"></span>
+        </div>
+    </section>
+
+    <section class="auth-modern-card login-card">
+        <div class="auth-modern-header">
+            <div class="logo-wrapper" id="loginRoleIcon">
+                <i class="bi bi-mortarboard-fill glow-icon"></i>
+            </div>
+            <h2>Giriş Yap</h2>
+            <p id="loginRoleCaption">Öğrenci akışı hazır</p>
         </div>
 
         <form asp-action="Login" method="post" id="loginForm" class="premium-form">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-            <div class="form-group mb-4">
+            <div class="form-group mb-3">
                 <label asp-for="Email" class="form-label">E-posta</label>
                 <div class="input-glass-wrapper">
                     <i class="bi bi-envelope input-icon"></i>
@@ -29,7 +123,7 @@
                 <span asp-validation-for="Email" class="text-danger small mt-1 d-block"></span>
             </div>
 
-            <div class="form-group mb-4">
+            <div class="form-group mb-3">
                 <label asp-for="Password" class="form-label">Şifre</label>
                 <div class="input-glass-wrapper">
                     <i class="bi bi-lock input-icon"></i>
@@ -46,109 +140,83 @@
                     <input asp-for="RememberMe" class="form-check-input" type="checkbox" id="rememberMe">
                     <label asp-for="RememberMe" class="form-check-label text-secondary small" for="rememberMe">Beni hatırla</label>
                 </div>
+                <span class="auth-live-chip" data-bs-toggle="tooltip" data-bs-title="Seçilen role göre demo hesabı otomatik yüklenir.">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    Demo
+                </span>
             </div>
 
-            <button type="submit" class="btn-premium-submit w-100 mb-4">
+            <button type="submit" class="btn-premium-submit w-100 mb-3">
                 <span>Giriş Yap</span>
             </button>
         </form>
 
-        <div class="demo-accounts mt-3">
-            <p class="text-muted small text-center mb-3"><i class="bi bi-info-circle"></i> Hızlı giriş için bir hesap seçin:</p>
-            <div class="d-flex flex-column gap-2">
-                <button type="button" class="btn btn-demo" data-email="admin@careertrack.com" data-pass="Admin123!">
-                    <i class="bi bi-shield-lock-fill text-danger me-2"></i> <strong>Admin</strong> <span class="text-muted ms-auto small">— admin@@...</span>
+        <div class="demo-accounts auth-role-picker">
+            <p class="text-muted small text-center mb-3"><i class="bi bi-info-circle"></i> Hızlı giriş rolü seçin</p>
+            <div class="nav nav-pills auth-demo-grid" role="tablist">
+                <button type="button"
+                        class="btn btn-demo auth-demo-role"
+                        data-auth-role-trigger
+                        data-role="admin"
+                        data-email="admin@careertrack.com"
+                        data-pass="Admin123!"
+                        data-bs-toggle="pill"
+                        data-bs-target="#roleAdminPanel"
+                        data-bs-title="Sistem ve rol yönetimi"
+                        role="tab">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <strong>Admin</strong>
                 </button>
-                <button type="button" class="btn btn-demo" data-email="okul@careertrack.com" data-pass="Okul123!">
-                    <i class="bi bi-bank2 text-primary me-2"></i> <strong>Okul</strong> <span class="text-muted ms-auto small">— okul@@...</span>
+                <button type="button"
+                        class="btn btn-demo auth-demo-role"
+                        data-auth-role-trigger
+                        data-role="school"
+                        data-email="okul@careertrack.com"
+                        data-pass="Okul123!"
+                        data-bs-toggle="pill"
+                        data-bs-target="#roleSchoolPanel"
+                        data-bs-title="Onay ve öğrenci takibi"
+                        role="tab">
+                    <i class="bi bi-bank2"></i>
+                    <strong>Okul</strong>
                 </button>
-                <button type="button" class="btn btn-demo" data-email="isveren@careertrack.com" data-pass="Isveren123!">
-                    <i class="bi bi-building-fill text-success me-2"></i> <strong>İşveren</strong> <span class="text-muted ms-auto small">— isveren@@...</span>
+                <button type="button"
+                        class="btn btn-demo auth-demo-role"
+                        data-auth-role-trigger
+                        data-role="employer"
+                        data-email="isveren@careertrack.com"
+                        data-pass="Isveren123!"
+                        data-bs-toggle="pill"
+                        data-bs-target="#roleEmployerPanel"
+                        data-bs-title="İlan ve aday süreçleri"
+                        role="tab">
+                    <i class="bi bi-building-fill"></i>
+                    <strong>İşveren</strong>
                 </button>
-                <button type="button" class="btn btn-demo" data-email="ogrenci@careertrack.com" data-pass="Ogrenci123!">
-                    <i class="bi bi-mortarboard-fill text-info me-2"></i> <strong>Öğrenci</strong> <span class="text-muted ms-auto small">— ogrenci@@...</span>
+                <button type="button"
+                        class="btn btn-demo auth-demo-role active"
+                        data-auth-role-trigger
+                        data-role="student"
+                        data-email="ogrenci@careertrack.com"
+                        data-pass="Ogrenci123!"
+                        data-bs-toggle="pill"
+                        data-bs-target="#roleStudentPanel"
+                        data-bs-title="Başvuru ve staj defteri"
+                        role="tab"
+                        aria-selected="true">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <strong>Öğrenci</strong>
                 </button>
             </div>
         </div>
         
-        <div class="form-footer mt-4 text-center">
+        <div class="form-footer mt-3 text-center">
             <p class="text-muted mb-2">Hesabın yok mu?</p>
             <a asp-action="Register" class="btn btn-outline-secondary w-100">Kayıt Ol</a>
         </div>
-    </div>
+    </section>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScripts" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script>
-        function togglePassword() {
-            const input = document.getElementById('passwordInput');
-            const icon = document.getElementById('eyeIcon');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.replace('bi-eye', 'bi-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.replace('bi-eye-slash', 'bi-eye');
-            }
-        }
-
-        // Demo Buttons
-        document.querySelectorAll('.btn-demo').forEach(btn => {
-            btn.addEventListener('click', function () {
-                document.getElementById('emailInput').value = this.dataset.email;
-                document.getElementById('passwordInput').value = this.dataset.pass;
-                
-                anime({
-                    targets: '#loginForm',
-                    scale: [0.98, 1],
-                    duration: 300,
-                    easing: 'easeOutQuad',
-                    complete: function() {
-                        document.getElementById('loginForm').submit();
-                    }
-                });
-            });
-        });
-
-        // Background Particles & Staggering
-        document.addEventListener('DOMContentLoaded', () => {
-            // Animating main card
-            anime({
-                targets: '.auth-modern-card',
-                translateY: [20, 0],
-                opacity: [0, 1],
-                duration: 800,
-                easing: 'easeOutExpo'
-            });
-
-            // Particles
-            const container = document.getElementById('authParticles');
-            const particleCount = 15;
-            
-            for(let i=0; i<particleCount; i++) {
-                const p = document.createElement('div');
-                p.classList.add('particle-glow');
-                const size = Math.random() * 300 + 100;
-                p.style.width = `${size}px`;
-                p.style.height = `${size}px`;
-                p.style.left = `${Math.random() * 100}%`;
-                p.style.top = `${Math.random() * 100}%`;
-                container.appendChild(p);
-            }
-            
-            anime({
-                targets: '.particle-glow',
-                translateX: () => anime.random(-150, 150),
-                translateY: () => anime.random(-150, 150),
-                scale: () => anime.random(0.8, 1.2),
-                opacity: () => anime.random(0.1, 0.4),
-                duration: () => anime.random(6000, 12000),
-                direction: 'alternate',
-                loop: true,
-                easing: 'easeInOutSine'
-            });
-        });
-    </script>
 }

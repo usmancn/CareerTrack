@@ -52,34 +52,23 @@
                         </span>
                     </td>
                     <td class="text-end">
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-primary dropdown-toggle" type="button"
-                                    data-bs-toggle="dropdown" data-bs-boundary="window" data-bs-display="static">
-                                Durum Güncelle
+                        <form asp-action="UpdateApplicationStatus" method="post" class="application-status-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@app.Id" />
+                            <select name="status" class="form-select form-select-sm" aria-label="Başvuru durumunu seç">
+                                <option value="@ApplicationStatus.SchoolApproved" selected="@(app.Status == ApplicationStatus.SchoolApproved)">Okul Onaylı</option>
+                                <option value="@ApplicationStatus.PreScreening" selected="@(app.Status == ApplicationStatus.PreScreening)">Ön Eleme</option>
+                                <option value="@ApplicationStatus.AptitudeTest" selected="@(app.Status == ApplicationStatus.AptitudeTest)">Genel Yetenek Testi</option>
+                                <option value="@ApplicationStatus.LanguageTest" selected="@(app.Status == ApplicationStatus.LanguageTest)">Dil Sınavı</option>
+                                <option value="@ApplicationStatus.Interview" selected="@(app.Status == ApplicationStatus.Interview)">Mülakat</option>
+                                <option value="@ApplicationStatus.EmployerAccepted" selected="@(app.Status == ApplicationStatus.EmployerAccepted)">Kabul Et</option>
+                                <option value="@ApplicationStatus.Rejected" selected="@(app.Status == ApplicationStatus.Rejected)">Reddet</option>
+                                <option value="@ApplicationStatus.Completed" selected="@(app.Status == ApplicationStatus.Completed)">Staj Tamamlandı</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary btn-action-save">
+                                <i class="bi bi-arrow-repeat me-1"></i>Güncelle
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end p-3 shadow-lg" style="min-width: 250px; background-color: #0f172a; border: 1px solid rgba(255,255,255,0.1); z-index: 9999;">
-                                <li>
-                                    <form asp-action="UpdateApplicationStatus" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@app.Id" />
-                                        
-                                        <div class="mb-2">
-                                            <select name="status" class="form-select form-select-sm">
-                                                <option value="@ApplicationStatus.SchoolApproved" selected="@(app.Status == ApplicationStatus.SchoolApproved)">Okul Onaylı</option>
-                                                <option value="@ApplicationStatus.PreScreening" selected="@(app.Status == ApplicationStatus.PreScreening)">Ön Eleme</option>
-                                                <option value="@ApplicationStatus.AptitudeTest" selected="@(app.Status == ApplicationStatus.AptitudeTest)">Genel Yetenek Testi</option>
-                                                <option value="@ApplicationStatus.LanguageTest" selected="@(app.Status == ApplicationStatus.LanguageTest)">Dil Sınavı</option>
-                                                <option value="@ApplicationStatus.Interview" selected="@(app.Status == ApplicationStatus.Interview)">Mülakat</option>
-                                                <option value="@ApplicationStatus.EmployerAccepted" selected="@(app.Status == ApplicationStatus.EmployerAccepted)">Kabul Et</option>
-                                                <option value="@ApplicationStatus.Rejected" selected="@(app.Status == ApplicationStatus.Rejected)">Reddet</option>
-                                                <option value="@ApplicationStatus.Completed" selected="@(app.Status == ApplicationStatus.Completed)">Staj Tamamlandı</option>
-                                            </select>
-                                        </div>
-                                        <button type="submit" class="btn btn-sm btn-primary w-100">Güncelle</button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </div>
+                        </form>
                     </td>
                 </tr>
             }

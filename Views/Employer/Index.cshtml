@@ -1,6 +1,9 @@
 @model EmployerDashboardViewModel
 @{
     ViewData["Title"] = "İşveren Paneli";
+    var inactivePostings = Math.Max(0, Model.TotalPostings - Model.ActivePostings);
+    var reviewedApplications = Math.Max(0, Model.TotalApplications - Model.PendingApplications);
+    var postingTotal = Math.Max(1, Model.TotalPostings);
 }
 
 <!-- İstatistik Kartları -->
@@ -31,6 +34,78 @@
             <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
             <div class="stat-value count-anim">@Model.PendingApplications</div>
             <div class="stat-label">Bekleyen Başvuru</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4 dashboard-graphs">
+    <div class="col-lg-7">
+        <div class="chart-card h-100" data-chart-card>
+            <div class="chart-header">
+                <div>
+                    <span class="chart-kicker">İşveren performansı</span>
+                    <h3>İlan ve Aday Akışı</h3>
+                </div>
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div class="chart-bars" data-chart-bars>
+                <div class="chart-bar-row" data-chart-value="@Model.ActivePostings" data-bs-toggle="tooltip" data-bs-title="Şu anda aktif olan ilanlar">
+                    <span>Aktif ilan</span>
+                    <div class="chart-bar-track"><span class="chart-bar-fill"></span></div>
+                    <strong data-chart-number>@Model.ActivePostings</strong>
+                </div>
+                <div class="chart-bar-row" data-chart-value="@inactivePostings" data-bs-toggle="tooltip" data-bs-title="Pasif veya kapatılmış ilanlar">
+                    <span>Pasif ilan</span>
+                    <div class="chart-bar-track"><span class="chart-bar-fill"></span></div>
+                    <strong data-chart-number>@inactivePostings</strong>
+                </div>
+                <div class="chart-bar-row" data-chart-value="@Model.TotalApplications" data-bs-toggle="tooltip" data-bs-title="Şirkete gelen toplam başvuru">
+                    <span>Toplam başvuru</span>
+                    <div class="chart-bar-track"><span class="chart-bar-fill"></span></div>
+                    <strong data-chart-number>@Model.TotalApplications</strong>
+                </div>
+                <div class="chart-bar-row" data-chart-value="@Model.PendingApplications" data-bs-toggle="tooltip" data-bs-title="İşlem bekleyen veya devam eden başvurular">
+                    <span>Bekleyen süreç</span>
+                    <div class="chart-bar-track"><span class="chart-bar-fill"></span></div>
+                    <strong data-chart-number>@Model.PendingApplications</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="chart-card h-100 chart-focus-card" data-chart-card>
+            <div class="chart-header">
+                <div>
+                    <span class="chart-kicker">İlan canlılığı</span>
+                    <h3>Aktif İlan Oranı</h3>
+                </div>
+                <i class="bi bi-megaphone"></i>
+            </div>
+            <div class="chart-donut-wrap">
+                <div class="chart-donut" data-chart-donut data-chart-value="@Model.ActivePostings" data-chart-total="@postingTotal">
+                    <div class="chart-donut-core">
+                        <strong class="count-anim">@Model.ActivePostings</strong>
+                        <span>aktif ilan</span>
+                    </div>
+                </div>
+                <div class="pipeline-graph">
+                    <div class="pipeline-step">
+                        <i class="bi bi-megaphone"></i>
+                        <strong>@Model.TotalPostings</strong>
+                        <span>Toplam ilan</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <i class="bi bi-people"></i>
+                        <strong>@Model.TotalApplications</strong>
+                        <span>Aday</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <i class="bi bi-check2-circle"></i>
+                        <strong>@reviewedApplications</strong>
+                        <span>İşlenmiş</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

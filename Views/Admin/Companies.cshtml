@@ -104,8 +104,8 @@
         }
 
         <!-- Onaylı Şirketler -->
-        <div class="table-card">
-            <table class="table align-middle mb-0">
+        <div class="table-card company-management-card">
+            <table class="table align-middle mb-0 company-management-table">
                 <thead>
                     <tr>
                         <th>Şirket Adı</th>
@@ -119,28 +119,46 @@
                     @foreach (var c in approvedCompanies)
                     {
                         <tr>
-                            <td colspan="5">
-                                <div class="company-row-form">
-                                    <form asp-action="EditCompany" method="post" class="company-edit-form">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="Id" value="@c.Id" />
-                                        <input type="text" name="Name" value="@c.Name" class="form-control form-control-sm" required minlength="2" maxlength="200" />
-                                        <input type="text" name="Sector" value="@c.Sector" class="form-control form-control-sm" required maxlength="100" />
-                                        <input type="text" name="Location" value="@c.Location" class="form-control form-control-sm" required maxlength="200" />
-                                        <span class="badge bg-primary">@c.JobApplications.Count başvuru</span>
-                                        <button type="submit" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-save"></i>
-                                        </button>
-                                    </form>
-                                    <form asp-action="DeleteCompany" asp-route-id="@c.Id" method="post" class="d-inline"
-                                          onsubmit="return confirm('Bu şirketi silmek istediğinizden emin misiniz?')">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" @(c.JobApplications.Any() ? "disabled" : "")>
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
+                            <td>
+                                <form id="company-edit-@c.Id" asp-action="EditCompany" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="Id" value="@c.Id" />
+                                </form>
+                                <input form="company-edit-@c.Id" type="text" name="Name" value="@c.Name"
+                                       class="form-control form-control-sm table-input" required minlength="2" maxlength="200"
+                                       aria-label="Şirket adı" />
                             </td>
+                            <td>
+                                <input form="company-edit-@c.Id" type="text" name="Sector" value="@c.Sector"
+                                       class="form-control form-control-sm table-input" required maxlength="100"
+                                       aria-label="Sektör" />
+                            </td>
+                            <td>
+                                <input form="company-edit-@c.Id" type="text" name="Location" value="@c.Location"
+                                       class="form-control form-control-sm table-input" required maxlength="200"
+                                       aria-label="Konum" />
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">@c.JobApplications.Count başvuru</span>
+                            </td>
+                            <td class="text-end action-cell">
+                                <button form="company-edit-@c.Id" type="submit" class="btn btn-sm btn-outline-primary btn-action-save">
+                                    <i class="bi bi-save me-1"></i>Kaydet
+                                </button>
+                                <form asp-action="DeleteCompany" asp-route-id="@c.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Bu şirketi silmek istediğinizden emin misiniz?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-icon-action" @(c.JobApplications.Any() ? "disabled" : "") title="Sil">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    @if (!approvedCompanies.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">Henüz onaylı şirket yok.</td>
                         </tr>
                     }
                 </tbody>

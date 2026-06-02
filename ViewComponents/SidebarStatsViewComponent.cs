@@ -38,7 +38,11 @@ namespace CareerTrack.ViewComponents
             }
             else if (roles.Contains("Employer"))
             {
-                count = await _context.JobApplications.CountAsync(a => a.Company.EmployerId == user.Id && a.Status == Models.Enums.ApplicationStatus.Pending);
+                count = user.CompanyId.HasValue
+                    ? await _context.JobApplications.CountAsync(a =>
+                        a.CompanyId == user.CompanyId.Value &&
+                        a.Status == Models.Enums.ApplicationStatus.Pending)
+                    : 0;
                 label = "Yeni Başvuru";
                 icon = "bi-envelope";
                 badgeClass = "bg-success";
