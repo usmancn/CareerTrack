@@ -1,4 +1,5 @@
 using CareerTrack.Data;
+using CareerTrack.Models.Constants;
 using CareerTrack.Models.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,7 @@ var app = builder.Build();
 // ── Middleware Pipeline ────────────────────────────────────
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Dashboard/Error");
     app.UseHsts();
 }
 
@@ -47,6 +48,35 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
+
+app.Use(async (context, next) =>
+{
+    var requiresPasswordChange = context.User.Identity?.IsAuthenticated == true &&
+        context.User.HasClaim(AppClaims.RequiresPasswordChange, "true");
+    var employerPendingApproval = context.User.Identity?.IsAuthenticated == true &&
+        context.User.HasClaim(AppClaims.EmployerPendingApproval, "true");
+    var isPasswordAllowedPath = context.Request.Path.StartsWithSegments("/Profile/Settings") ||
+        context.Request.Path.StartsWithSegments("/Account/Logout") ||
+        context.Request.Path.StartsWithSegments("/Account/AccessDenied");
+    var isEmployerPendingAllowedPath = context.Request.Path.StartsWithSegments("/Account/PendingApproval") ||
+        context.Request.Path.StartsWithSegments("/Account/Logout") ||
+        context.Request.Path.StartsWithSegments("/Account/AccessDenied");
+
+    if (requiresPasswordChange && !isPasswordAllowedPath)
+    {
+        context.Response.Redirect("/Profile/Settings");
+        return;
+    }
+
+    if (employerPendingApproval && !isEmployerPendingAllowedPath)
+    {
+        context.Response.Redirect("/Account/PendingApproval");
+        return;
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
 
 app.MapControllerRoute(

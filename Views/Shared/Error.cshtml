@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Hata Oluştu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="stagger-container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6 text-center">
+            <div class="card p-5 border-danger shadow-lg stagger-item">
+                <div class="mb-4">
+                    <div class="display-1 text-danger animate-pulse">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                </div>
+                
+                <h1 class="welcome-title text-danger mb-3">Hay aksi! Bir şeyler ters gitti.</h1>
+                
+                <p class="text-secondary fs-5 mb-4">
+                    İstediğiniz işlem gerçekleştirilirken beklenmedik bir hata oluştu. Teknik ekibimiz durumdan haberdar edildi.
+                </p>
+
+                <div class="d-flex justify-content-center gap-3 mt-2">
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary px-4 py-2">
+                        <i class="bi bi-arrow-left me-2"></i>Geri Dön
+                    </a>
+                    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary px-4 py-2">
+                        <i class="bi bi-house me-2"></i>Ana Sayfa
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

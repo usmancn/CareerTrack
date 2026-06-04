@@ -25,6 +25,38 @@ namespace CareerTrack.Controllers
         private async Task<ApplicationUser> GetCurrentUserAsync() =>
             (await _userManager.GetUserAsync(User))!;
 
+        private static bool CanEmployerTransition(ApplicationStatus currentStatus, ApplicationStatus nextStatus)
+        {
+            if (!Enum.IsDefined(typeof(ApplicationStatus), nextStatus))
+                return false;
+
+            if (currentStatus == ApplicationStatus.Pending)
+                return nextStatus == ApplicationStatus.PreScreening ||
+                       nextStatus == ApplicationStatus.Rejected;
+
+            if (currentStatus >= ApplicationStatus.PreScreening &&
+                currentStatus <= ApplicationStatus.Interview)
+            {
+                return nextStatus == ApplicationStatus.Rejected ||
+                       (nextStatus > currentStatus && nextStatus <= ApplicationStatus.EmployerAccepted);
+            }
+
+            return false;
+        }
+
+        private static string? ValidateStudentTask(string title, string? description, DateTime? dueDate)
+        {
+            var normalizedTitle = title?.Trim() ?? string.Empty;
+            if (normalizedTitle.Length < 3 || normalizedTitle.Length > 200)
+                return "Görev başlığı 3-200 karakter arasında olmalıdır.";
+            if (!string.IsNullOrEmpty(description) && description.Length > 1000)
+                return "Görev açıklaması en fazla 1000 karakter olabilir.";
+            if (dueDate.HasValue && dueDate.Value.Date < DateTime.Today)
+                return "Görev son tarihi geçmiş bir tarih olamaz.";
+
+            return null;
+        }
+
         // GET: /Employer
         public async Task<IActionResult> Index()
         {
@@ -55,7 +87,7 @@ namespace CareerTrack.Controllers
                 TotalPostings = postings.Count,
                 ActivePostings = postings.Count(p => p.IsActive),
                 TotalApplications = applications.Count,
-                PendingApplications = applications.Count(a => a.Status == ApplicationStatus.SchoolApproved),
+                PendingApplications = applications.Count(a => a.Status == ApplicationStatus.Pending),
                 RecentPostings = await _context.JobPostings
                     .Where(jp => jp.EmployerId == user.Id)
                     .OrderByDescending(jp => jp.CreatedAt)
@@ -166,6 +198,10 @@ namespace CareerTrack.Controllers
             {
                 ModelState.AddModelError(nameof(vm.EndDate), "Bitiş tarihi, başlangıç tarihinden sonra olmalıdır.");
             }
+            if (vm.StartDate < DateTime.Today && vm.StartDate.Date != posting.StartDate.Date)
+            {
+                ModelState.AddModelError(nameof(vm.StartDate), "Başlangıç tarihi geçmiş bir tarih olamaz.");
+            }
 
             if (!ModelState.IsValid) return View(vm);
 
@@ -192,6 +228,12 @@ namespace CareerTrack.Controllers
 
             if (posting == null) return NotFound();
 
+            if (!posting.IsActive && posting.EndDate.Date < DateTime.Today)
+            {
+                TempData["Error"] = "Bitiş tarihi geçmiş bir ilan tekrar aktif edilemez.";
+                return RedirectToAction(nameof(Postings));
+            }
+
             posting.IsActive = !posting.IsActive;
             await _context.SaveChangesAsync();
             TempData["Success"] = posting.IsActive ? "İlan tekrar aktif edildi." : "İlan pasif yapıldı.";
@@ -208,6 +250,12 @@ namespace CareerTrack.Controllers
                 .FirstOrDefaultAsync(jp => jp.Id == id && jp.EmployerId == user.Id);
 
             if (posting == null) return NotFound();
+
+            if (await _context.JobApplications.AnyAsync(a => a.InternshipPostingId == id))
+            {
+                TempData["Error"] = "Başvuru almış bir ilan silinemez. İlanı pasif hale getirebilirsiniz.";
+                return RedirectToAction(nameof(Postings));
+            }
 
             _context.JobPostings.Remove(posting);
             await _context.SaveChangesAsync();
@@ -266,8 +314,32 @@ namespace CareerTrack.Controllers
             if (app == null) return NotFound();
 
             var prevStatus = app.Status;
+            if (!CanEmployerTransition(prevStatus, status))
+            {
+                TempData["Error"] = "Bu başvuru mevcut durumundan seçilen aşamaya geçirilemez.";
+                return RedirectToAction(prevStatus == ApplicationStatus.Pending
+                    ? nameof(Applications)
+                    : nameof(ProcessManagement));
+            }
+
+            if (status != ApplicationStatus.Rejected &&
+                prevStatus >= ApplicationStatus.PreScreening &&
+                prevStatus <= ApplicationStatus.Interview)
+            {
+                var latestTodo = await _context.ToDos
+                    .Where(t => t.JobApplicationId == app.Id)
+                    .OrderByDescending(t => t.Id)
+                    .FirstOrDefaultAsync();
+
+                if (latestTodo != null && !latestTodo.IsCompleted)
+                {
+                    TempData["Error"] = "Öğrenci mevcut aşama görevini tamamlamadan başvuru ilerletilemez.";
+                    return RedirectToAction(nameof(ProcessManagement));
+                }
+            }
+
             app.Status = status;
-            
+
             if (!string.IsNullOrEmpty(employerNote))
                 app.EmployerNote = employerNote;
 
@@ -276,12 +348,12 @@ namespace CareerTrack.Controllers
             {
                 string? todoTitle = status switch
                 {
-                    ApplicationStatus.PreScreening  => $"[{app.Company?.Name}] Ön Eleme Aşamasına Girdiniz — Başvurunuzu Takip Edin",
-                    ApplicationStatus.AptitudeTest  => $"[{app.Company?.Name}] Genel Yetenek Testine Girmeniz Bekleniyor",
-                    ApplicationStatus.LanguageTest  => $"[{app.Company?.Name}] İngilizce Sınavına Girmeniz Bekleniyor",
-                    ApplicationStatus.Interview     => $"[{app.Company?.Name}] Mülakata Girmeniz Bekleniyor",
-                    ApplicationStatus.EmployerAccepted => $"[{app.Company?.Name}] Staj Teklifini Kabul Ettiniz — Okul Onayı Bekleniyor",
-                    ApplicationStatus.Rejected      => $"[{app.Company?.Name}] Başvurunuz Sonuçlandı — Yeni Başvuruları İnceleyin",
+                    ApplicationStatus.PreScreening => $"[{app.Company?.Name}] Ön Eleme Aşamasına Girdiniz — Başvurunuzu Takip Edin",
+                    ApplicationStatus.AptitudeTest => $"[{app.Company?.Name}] Genel Yetenek Testine Girmeniz Bekleniyor",
+                    ApplicationStatus.LanguageTest => $"[{app.Company?.Name}] İngilizce Sınavına Girmeniz Bekleniyor",
+                    ApplicationStatus.Interview => $"[{app.Company?.Name}] Mülakata Girmeniz Bekleniyor",
+                    ApplicationStatus.EmployerAccepted => $"[{app.Company?.Name}] İşveren sizi staj için kabul etti — Okul Onayı Bekleniyor",
+                    ApplicationStatus.Rejected => $"[{app.Company?.Name}] Başvurunuz Sonuçlandı — Yeni Başvuruları İnceleyin",
                     _ => null
                 };
 
@@ -322,6 +394,18 @@ namespace CareerTrack.Controllers
 
             if (app == null) return NotFound();
 
+            if (app.Status < ApplicationStatus.PreScreening || app.Status > ApplicationStatus.Interview)
+            {
+                TempData["Error"] = "Yalnızca devam eden işveren değerlendirme aşamaları güncellenebilir.";
+                return RedirectToAction(nameof(ProcessManagement));
+            }
+
+            if (score.HasValue && (score.Value < 0 || score.Value > 100))
+            {
+                TempData["Error"] = "Değerlendirme puanı 0 ile 100 arasında olmalıdır.";
+                return RedirectToAction(nameof(ProcessManagement));
+            }
+
             var stageName = app.Status switch
             {
                 ApplicationStatus.PreScreening => "Ön Eleme",
@@ -334,10 +418,10 @@ namespace CareerTrack.Controllers
             var finalNoteList = new List<string>();
             if (!string.IsNullOrEmpty(stageName) && !string.IsNullOrEmpty(evaluationResult))
                 finalNoteList.Add($"[{stageName}] Sonucu: {evaluationResult}");
-            
+
             if (score.HasValue)
                 finalNoteList.Add($"Puan: {score.Value}");
-                
+
             if (!string.IsNullOrEmpty(employerNote))
                 finalNoteList.Add($"Not: {employerNote}");
 
@@ -383,6 +467,24 @@ namespace CareerTrack.Controllers
 
             if (log == null || log.JobApplication?.CompanyId != user.CompanyId) return NotFound();
 
+            if (log.Status != DailyLogStatus.SentToEmployer)
+            {
+                TempData["Error"] = "Yalnızca öğrencinin işveren onayına gönderdiği günlükler değerlendirilebilir.";
+                return RedirectToAction(nameof(DailyLogs));
+            }
+
+            if (!approve && string.IsNullOrWhiteSpace(employerNote))
+            {
+                TempData["Error"] = "Revize isteği için öğrenciye açıklayıcı bir not yazmalısınız.";
+                return RedirectToAction(nameof(DailyLogs));
+            }
+
+            if (employerNote?.Trim().Length > 500)
+            {
+                TempData["Error"] = "İşveren notu en fazla 500 karakter olabilir.";
+                return RedirectToAction(nameof(DailyLogs));
+            }
+
             if (approve)
             {
                 log.IsEmployerApproved = true;
@@ -393,7 +495,7 @@ namespace CareerTrack.Controllers
                 log.IsEmployerApproved = false;
                 log.Status = DailyLogStatus.EmployerRejected; // Öğrenciye geri döner
             }
-            log.EmployerNote = employerNote;
+            log.EmployerNote = string.IsNullOrWhiteSpace(employerNote) ? null : employerNote.Trim();
             await _context.SaveChangesAsync();
 
             TempData["Success"] = approve ? "Günlük onaylandı ve okula iletildi." : "Günlük revize edilmesi için öğrenciye geri gönderildi.";
@@ -421,6 +523,7 @@ namespace CareerTrack.Controllers
                 .ToListAsync();
 
             ViewBag.ActiveInterns = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(activeInterns, "Id", "Name");
+            ViewBag.CurrentEmployerId = user.Id;
 
             return View(tasks);
         }
@@ -439,21 +542,22 @@ namespace CareerTrack.Controllers
             if (app == null || app.Status != ApplicationStatus.SchoolApproved)
             {
                 TempData["Error"] = "Sadece okul onaylı stajlardaki öğrencilere görev atanabilir.";
-                return RedirectToAction(nameof(Applications));
+                return RedirectToAction(nameof(Tasks));
             }
 
-            if (string.IsNullOrWhiteSpace(title))
+            var validationError = ValidateStudentTask(title, description, dueDate);
+            if (validationError != null)
             {
-                TempData["Error"] = "Görev başlığı zorunludur.";
-                return RedirectToAction(nameof(Applications));
+                TempData["Error"] = validationError;
+                return RedirectToAction(nameof(Tasks));
             }
 
             var task = new StudentTask
             {
                 JobApplicationId = app.Id,
                 AssignedByEmployerId = user.Id,
-                Title = title,
-                Description = description,
+                Title = title.Trim(),
+                Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
                 DueDate = dueDate,
                 CreatedAt = DateTime.Now
             };
@@ -462,7 +566,75 @@ namespace CareerTrack.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Görev başarıyla atandı.";
-            return RedirectToAction(nameof(Applications));
+            return RedirectToAction(nameof(Tasks));
+        }
+
+        // POST: /Employer/EditTask
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditTask(int id, string title, string? description, DateTime? dueDate)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user.CompanyId == null) return Forbid();
+
+            var task = await _context.StudentTasks
+                .Include(t => t.JobApplication)
+                .FirstOrDefaultAsync(t =>
+                    t.Id == id &&
+                    t.AssignedByEmployerId == user.Id &&
+                    t.JobApplication!.CompanyId == user.CompanyId.Value);
+
+            if (task == null) return NotFound();
+
+            if (task.IsCompleted)
+            {
+                TempData["Error"] = "Tamamlanmış bir görev düzenlenemez.";
+                return RedirectToAction(nameof(Tasks));
+            }
+
+            var validationError = ValidateStudentTask(title, description, dueDate);
+            if (validationError != null)
+            {
+                TempData["Error"] = validationError;
+                return RedirectToAction(nameof(Tasks));
+            }
+
+            task.Title = title.Trim();
+            task.Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+            task.DueDate = dueDate;
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Görev güncellendi.";
+            return RedirectToAction(nameof(Tasks));
+        }
+
+        // POST: /Employer/DeleteTask
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTask(int id)
+        {
+            var user = await GetCurrentUserAsync();
+            if (user.CompanyId == null) return Forbid();
+
+            var task = await _context.StudentTasks
+                .Include(t => t.JobApplication)
+                .FirstOrDefaultAsync(t =>
+                    t.Id == id &&
+                    t.AssignedByEmployerId == user.Id &&
+                    t.JobApplication!.CompanyId == user.CompanyId.Value);
+
+            if (task == null) return NotFound();
+
+            if (task.IsCompleted)
+            {
+                TempData["Error"] = "Tamamlanmış bir görev silinemez.";
+                return RedirectToAction(nameof(Tasks));
+            }
+
+            _context.StudentTasks.Remove(task);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Görev silindi.";
+            return RedirectToAction(nameof(Tasks));
         }
     }
 }

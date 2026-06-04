@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using CareerTrack.Models.Constants;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace CareerTrack.Models.ViewModels
 {
     public class AdminCreateUserViewModel
     {
         [Required(ErrorMessage = "Ad Soyad alanı zorunludur.")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Ad Soyad 3-100 karakter arasında olmalıdır.")]
         [Display(Name = "Ad Soyad")]
         public string FullName { get; set; } = string.Empty;
 
@@ -25,6 +27,12 @@ namespace CareerTrack.Models.ViewModels
         public string Role { get; set; } = AppRoles.Student;
 
         [Display(Name = "Departman veya Kurum (Opsiyonel)")]
+        [StringLength(100)]
         public string? Department { get; set; }
+
+        [Display(Name = "Bağlı Şirket")]
+        public int? CompanyId { get; set; }
+
+        public SelectList? Companies { get; set; }
     }
 }

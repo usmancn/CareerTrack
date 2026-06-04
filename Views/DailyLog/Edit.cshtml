@@ -16,6 +16,14 @@
 
             <div class="row g-3">
                 <div class="col-md-4">
+                    <label asp-for="JobApplicationId" class="form-label"></label>
+                    <select asp-for="JobApplicationId" class="form-select" asp-items="Model.Applications">
+                        <option value="">-- Staj Seçiniz --</option>
+                    </select>
+                    <span asp-validation-for="JobApplicationId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
                     <label asp-for="DayNumber" class="form-label"></label>
                     <input asp-for="DayNumber" class="form-control" type="number" min="1" max="365" />
                     <span asp-validation-for="DayNumber" class="text-danger small"></span>

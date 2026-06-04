@@ -26,6 +26,28 @@ namespace CareerTrack.Controllers
         private async Task<string> GetUserIdAsync() =>
             (await _userManager.GetUserAsync(User))!.Id;
 
+        private Task<bool> CanUseCompanyAsync(string userId, int companyId) =>
+            _context.Companies.AnyAsync(c =>
+                c.Id == companyId &&
+                (c.IsApproved || c.CreatedByUserId == userId));
+
+        private void ValidateApplicationForm(ApplicationCreateViewModel vm)
+        {
+            if (vm.ApplicationDate > DateTime.Today)
+                ModelState.AddModelError(nameof(vm.ApplicationDate), "Başvuru tarihi bugünden ileri bir tarih olamaz.");
+
+            if (vm.InternshipStartDate.HasValue != vm.InternshipEndDate.HasValue)
+            {
+                ModelState.AddModelError(nameof(vm.InternshipStartDate), "Staj başlangıç ve bitiş tarihlerini birlikte girmelisiniz.");
+                ModelState.AddModelError(nameof(vm.InternshipEndDate), "Staj başlangıç ve bitiş tarihlerini birlikte girmelisiniz.");
+            }
+            else if (vm.InternshipStartDate.HasValue &&
+                     vm.InternshipEndDate <= vm.InternshipStartDate)
+            {
+                ModelState.AddModelError(nameof(vm.InternshipEndDate), "Staj bitiş tarihi başlangıç tarihinden sonra olmalıdır.");
+            }
+        }
+
         // GET: /Application — Başvurularım + Açık İlanlar
         public async Task<IActionResult> Index()
         {
@@ -47,7 +69,9 @@ namespace CareerTrack.Controllers
             var openPostings = await _context.JobPostings
                 .Include(j => j.Company)
                 .Include(j => j.Employer)
-                .Where(j => j.IsActive && !appliedPostingIds.Contains(j.Id))
+                .Where(j => j.IsActive &&
+                            j.StartDate >= DateTime.Today &&
+                            !appliedPostingIds.Contains(j.Id))
                 .OrderByDescending(j => j.CreatedAt)
                 .ToListAsync();
 
@@ -73,11 +97,14 @@ namespace CareerTrack.Controllers
 
             var posting = await _context.JobPostings
                 .Include(jp => jp.Company)
-                .FirstOrDefaultAsync(jp => jp.Id == postingId && jp.IsActive);
+                .FirstOrDefaultAsync(jp =>
+                    jp.Id == postingId &&
+                    jp.IsActive &&
+                    jp.StartDate >= DateTime.Today);
 
             if (posting == null)
             {
-                TempData["Error"] = "İlan bulunamadı veya artık aktif değil.";
+                TempData["Error"] = "İlan bulunamadı veya artık başvuruya açık değil.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -131,11 +158,10 @@ namespace CareerTrack.Controllers
         {
             var userId = await GetUserIdAsync();
 
-            if (!await _context.Companies.AnyAsync(c => c.Id == vm.CompanyId))
+            if (!await CanUseCompanyAsync(userId, vm.CompanyId))
                 ModelState.AddModelError(nameof(vm.CompanyId), "Geçerli bir şirket seçiniz.");
 
-            if (vm.ApplicationDate > DateTime.Today)
-                ModelState.AddModelError("ApplicationDate", "Başvuru tarihi bugünden ileri bir tarih olamaz.");
+            ValidateApplicationForm(vm);
 
             if (!ModelState.IsValid)
             {
@@ -197,7 +223,7 @@ namespace CareerTrack.Controllers
             _context.Companies.Add(company);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"\"{company.Name}\" şirketi önerildi. Admin onayından sonra seçilebilecek.";
+            TempData["Success"] = $"\"{company.Name}\" şirketi önerildi. Admin onayına kadar yalnızca siz başvurularınızda seçebilirsiniz.";
             return RedirectToAction(nameof(Create));
         }
 
@@ -209,6 +235,12 @@ namespace CareerTrack.Controllers
                 .FirstOrDefaultAsync(a => a.Id == id && a.StudentId == userId);
 
             if (app == null) return NotFound();
+
+            if (app.InternshipPostingId.HasValue)
+            {
+                TempData["Error"] = "İlan üzerinden yapılan başvuruların şirket ve pozisyon bilgileri düzenlenemez.";
+                return RedirectToAction(nameof(Index));
+            }
 
             // Sadece Pending veya SchoolRevision durumundaki başvurular düzenlenebilir
             if (app.Status != ApplicationStatus.Pending && app.Status != ApplicationStatus.SchoolRevision)
@@ -244,17 +276,22 @@ namespace CareerTrack.Controllers
 
             if (app == null) return NotFound();
 
+            if (app.InternshipPostingId.HasValue)
+            {
+                TempData["Error"] = "İlan üzerinden yapılan başvuruların şirket ve pozisyon bilgileri düzenlenemez.";
+                return RedirectToAction(nameof(Index));
+            }
+
             if (app.Status != ApplicationStatus.Pending && app.Status != ApplicationStatus.SchoolRevision)
             {
                 TempData["Error"] = "Sadece bekleyen veya revize istenen başvurular düzenlenebilir.";
                 return RedirectToAction(nameof(Index));
             }
 
-            if (!await _context.Companies.AnyAsync(c => c.Id == vm.CompanyId))
+            if (!await CanUseCompanyAsync(userId, vm.CompanyId))
                 ModelState.AddModelError(nameof(vm.CompanyId), "Geçerli bir şirket seçiniz.");
 
-            if (vm.ApplicationDate > DateTime.Today)
-                ModelState.AddModelError(nameof(vm.ApplicationDate), "Başvuru tarihi bugünden ileri bir tarih olamaz.");
+            ValidateApplicationForm(vm);
 
             if (!ModelState.IsValid)
             {
@@ -301,6 +338,12 @@ namespace CareerTrack.Controllers
 
             if (app == null) return NotFound();
 
+            if (app.Status < ApplicationStatus.PreScreening || app.Status > ApplicationStatus.Interview)
+            {
+                TempData["Error"] = "Bu başvuruda tamamlanabilecek aktif bir aşama bulunmuyor.";
+                return RedirectToAction(nameof(Index), new { tab = "myapps" });
+            }
+
             // Sadece bu JobApplication'a ait olan son atanmış görevi (ToDo) bul ve tamamla
             var currentTodo = await _context.ToDos
                 .Where(t => t.JobApplicationId == app.Id && t.StudentId == userId && !t.IsCompleted)
@@ -311,6 +354,11 @@ namespace CareerTrack.Controllers
             {
                 currentTodo.IsCompleted = true;
                 await _context.SaveChangesAsync();
+            }
+            else
+            {
+                TempData["Error"] = "Bu aşama için bekleyen bir göreviniz bulunmuyor.";
+                return RedirectToAction(nameof(Index), new { tab = "myapps" });
             }
 
             TempData["Success"] = "Tebrikler! Göreviniz tamamlandı olarak işaretlendi. İşveren değerlendirmesi bekleniyor.";
@@ -328,9 +376,9 @@ namespace CareerTrack.Controllers
 
             if (app == null) return NotFound();
 
-            if (app.Status != ApplicationStatus.Pending)
+            if (app.Status != ApplicationStatus.Pending && app.Status != ApplicationStatus.SchoolRevision)
             {
-                TempData["Error"] = "Sadece işveren tarafından henüz değerlendirilmemiş başvurular silinebilir.";
+                TempData["Error"] = "Sadece bekleyen veya revize istenen başvurular silinebilir.";
                 return RedirectToAction(nameof(Index));
             }
 

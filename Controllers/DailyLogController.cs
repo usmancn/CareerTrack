@@ -25,6 +25,50 @@ namespace CareerTrack.Controllers
         private async Task<string> GetUserIdAsync() =>
             (await _userManager.GetUserAsync(User))!.Id;
 
+        private static bool CanStudentModify(DailyLogStatus status) =>
+            status == DailyLogStatus.Draft ||
+            status == DailyLogStatus.EmployerRejected ||
+            status == DailyLogStatus.SchoolRejected;
+
+        private Task<JobApplication?> GetOwnedApprovedApplicationAsync(int applicationId, string userId) =>
+            _context.JobApplications.FirstOrDefaultAsync(a =>
+                a.Id == applicationId &&
+                a.StudentId == userId &&
+                a.Status == ApplicationStatus.SchoolApproved);
+
+        private void ValidateLogAgainstApplication(DailyLogCreateViewModel vm, JobApplication application)
+        {
+            if (application.InternshipStartDate.HasValue &&
+                vm.LogDate.Date < application.InternshipStartDate.Value.Date)
+            {
+                ModelState.AddModelError(nameof(vm.LogDate), "Günlük tarihi staj başlangıç tarihinden önce olamaz.");
+            }
+
+            if (application.InternshipEndDate.HasValue &&
+                vm.LogDate.Date > application.InternshipEndDate.Value.Date)
+            {
+                ModelState.AddModelError(nameof(vm.LogDate), "Günlük tarihi staj bitiş tarihinden sonra olamaz.");
+            }
+
+            if (application.TotalInternshipDays.HasValue &&
+                vm.DayNumber > application.TotalInternshipDays.Value)
+            {
+                ModelState.AddModelError(nameof(vm.DayNumber), "Gün numarası tanımlı toplam staj gününü aşamaz.");
+            }
+        }
+
+        private async Task PopulateApplicationsSelectListAsync(DailyLogCreateViewModel vm, string userId, int? selectedId = null)
+        {
+            var approvedApplications = await _context.JobApplications
+                .Include(a => a.Company)
+                .Where(a => a.StudentId == userId && a.Status == ApplicationStatus.SchoolApproved)
+                .ToListAsync();
+
+            vm.Applications = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
+                approvedApplications.Select(a => new { a.Id, DisplayName = $"{a.Company?.Name} - {a.Position}" }),
+                "Id", "DisplayName", selectedId);
+        }
+
         // GET: /DailyLog
         public async Task<IActionResult> Index()
         {
@@ -54,12 +98,8 @@ namespace CareerTrack.Controllers
             var userId = await GetUserIdAsync();
 
             // Sadece okul onaylı stajlara günlük yazılabilir
-            var approvedApplications = await _context.JobApplications
-                .Include(a => a.Company)
-                .Where(a => a.StudentId == userId && a.Status == ApplicationStatus.SchoolApproved)
-                .ToListAsync();
-
-            if (!approvedApplications.Any())
+            if (!await _context.JobApplications.AnyAsync(a =>
+                a.StudentId == userId && a.Status == ApplicationStatus.SchoolApproved))
             {
                 TempData["Error"] = "Günlük yazabilmek için okul onaylı aktif bir stajınız olmalıdır.";
                 return RedirectToAction(nameof(Index));
@@ -67,11 +107,9 @@ namespace CareerTrack.Controllers
 
             var vm = new DailyLogCreateViewModel
             {
-                LogDate = DateTime.Today,
-                Applications = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                    approvedApplications.Select(a => new { a.Id, DisplayName = $"{a.Company?.Name} - {a.Position}" }), 
-                    "Id", "DisplayName")
+                LogDate = DateTime.Today
             };
+            await PopulateApplicationsSelectListAsync(vm, userId);
             return View(vm);
         }
 
@@ -80,50 +118,38 @@ namespace CareerTrack.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(DailyLogCreateViewModel vm)
         {
-            if (!ModelState.IsValid) return View(vm);
+            var userId = await GetUserIdAsync();
 
             if (vm.LogDate > DateTime.Today)
             {
                 ModelState.AddModelError("LogDate", "Staj defteri tarihi bugünden ileri olamaz.");
-                return View(vm);
             }
 
-            var userId = await GetUserIdAsync();
-
             // Sadece SchoolApproved başvuruya günlük yazılabilir
-            if (!await _context.JobApplications.AnyAsync(a =>
-                a.Id == vm.JobApplicationId &&
-                a.StudentId == userId &&
-                a.Status == ApplicationStatus.SchoolApproved))
+            var application = await GetOwnedApprovedApplicationAsync(vm.JobApplicationId, userId);
+            if (application == null)
             {
                 ModelState.AddModelError(nameof(vm.JobApplicationId), "Geçerli ve okul onaylı bir staj seçiniz.");
+            }
+            else
+            {
+                ValidateLogAgainstApplication(vm, application);
+            }
+
+            // Aynı gün numarasında kayıt var mı?
+            if (ModelState.IsValid)
+            {
+                var exists = await _context.DailyLogs
+                    .AnyAsync(d => d.StudentId == userId && d.JobApplicationId == vm.JobApplicationId && d.DayNumber == vm.DayNumber);
+                if (exists)
+                {
+                    ModelState.AddModelError("DayNumber", $"{vm.DayNumber}. gün için zaten bir kayıt mevcut.");
+                }
             }
 
             if (!ModelState.IsValid)
             {
-                var apps = await _context.JobApplications
-                    .Include(a => a.Company)
-                    .Where(a => a.StudentId == userId && a.Status == ApplicationStatus.SchoolApproved)
-                    .ToListAsync();
-                vm.Applications = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                    apps.Select(a => new { a.Id, DisplayName = $"{a.Company?.Name} - {a.Position}" }), 
-                    "Id", "DisplayName", vm.JobApplicationId);
-                return View(vm);
-            }
-
-            // Aynı gün numarasında kayıt var mı?
-            var exists = await _context.DailyLogs
-                .AnyAsync(d => d.StudentId == userId && d.JobApplicationId == vm.JobApplicationId && d.DayNumber == vm.DayNumber);
-            if (exists)
-            {
-                ModelState.AddModelError("DayNumber", $"{vm.DayNumber}. gün için zaten bir kayıt mevcut.");
-                var apps = await _context.JobApplications
-                    .Include(a => a.Company)
-                    .Where(a => a.StudentId == userId && a.Status == ApplicationStatus.SchoolApproved)
-                    .ToListAsync();
-                vm.Applications = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                    apps.Select(a => new { a.Id, DisplayName = $"{a.Company?.Name} - {a.Position}" }), 
-                    "Id", "DisplayName", vm.JobApplicationId);
+                await PopulateApplicationsSelectListAsync(vm, userId, vm.JobApplicationId);
                 return View(vm);
             }
 
@@ -152,16 +178,11 @@ namespace CareerTrack.Controllers
 
             if (log == null) return NotFound();
 
-            if (log.Status == DailyLogStatus.EmployerApproved || log.Status == DailyLogStatus.SchoolApproved)
+            if (!CanStudentModify(log.Status))
             {
-                TempData["Error"] = "Onaylanmış bir kaydı düzenleyemezsiniz.";
+                TempData["Error"] = "Onay sürecindeki veya onaylanmış bir kaydı düzenleyemezsiniz.";
                 return RedirectToAction(nameof(Index));
             }
-
-            var applications = await _context.JobApplications
-                .Include(a => a.Company)
-                .Where(a => a.StudentId == userId && a.Status == ApplicationStatus.SchoolApproved)
-                .ToListAsync();
 
             var vm = new DailyLogCreateViewModel
             {
@@ -169,11 +190,9 @@ namespace CareerTrack.Controllers
                 JobApplicationId = log.JobApplicationId,
                 DayNumber = log.DayNumber,
                 LogDate = log.LogDate,
-                Content = log.Content,
-                Applications = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                    applications.Select(a => new { a.Id, DisplayName = $"{a.Company?.Name} - {a.Position}" }), 
-                    "Id", "DisplayName", log.JobApplicationId)
+                Content = log.Content
             };
+            await PopulateApplicationsSelectListAsync(vm, userId, log.JobApplicationId);
             return View(vm);
         }
 
@@ -188,30 +207,39 @@ namespace CareerTrack.Controllers
 
             if (log == null) return NotFound();
 
-            if (log.Status == DailyLogStatus.EmployerApproved || log.Status == DailyLogStatus.SchoolApproved)
+            if (!CanStudentModify(log.Status))
             {
-                TempData["Error"] = "Onaylanmış bir kaydı düzenleyemezsiniz.";
+                TempData["Error"] = "Onay sürecindeki veya onaylanmış bir kaydı düzenleyemezsiniz.";
                 return RedirectToAction(nameof(Index));
             }
 
             if (vm.LogDate > DateTime.Today)
+            {
                 ModelState.AddModelError(nameof(vm.LogDate), "Staj defteri tarihi bugünden ileri olamaz.");
+            }
+
+            var application = await GetOwnedApprovedApplicationAsync(vm.JobApplicationId, userId);
+            if (application == null)
+            {
+                ModelState.AddModelError(nameof(vm.JobApplicationId), "Geçerli ve okul onaylı bir staj seçiniz.");
+            }
+            else
+            {
+                ValidateLogAgainstApplication(vm, application);
+            }
 
             var duplicateDay = await _context.DailyLogs
                 .AnyAsync(d => d.StudentId == userId && d.JobApplicationId == vm.JobApplicationId &&
                                d.DayNumber == vm.DayNumber && d.Id != id);
             if (duplicateDay)
+            {
                 ModelState.AddModelError(nameof(vm.DayNumber), $"{vm.DayNumber}. gün için zaten bir kayıt mevcut.");
+            }
 
             if (!ModelState.IsValid)
             {
-                var apps = await _context.JobApplications
-                    .Include(a => a.Company)
-                    .Where(a => a.StudentId == userId && a.Status == ApplicationStatus.SchoolApproved)
-                    .ToListAsync();
-                vm.Applications = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                    apps.Select(a => new { a.Id, DisplayName = $"{a.Company?.Name} - {a.Position}" }), 
-                    "Id", "DisplayName", vm.JobApplicationId);
+                vm.Id = id;
+                await PopulateApplicationsSelectListAsync(vm, userId, vm.JobApplicationId);
                 return View(vm);
             }
 
@@ -220,6 +248,8 @@ namespace CareerTrack.Controllers
             log.LogDate = vm.LogDate;
             log.Content = vm.Content;
             log.Status = DailyLogStatus.Draft;
+            log.IsEmployerApproved = false;
+            log.IsSchoolApproved = false;
 
             await _context.SaveChangesAsync();
             TempData["Success"] = "Günlük kaydı güncellendi!";
@@ -237,13 +267,21 @@ namespace CareerTrack.Controllers
 
             if (log == null) return NotFound();
 
-            if (log.Status != DailyLogStatus.Draft && log.Status != DailyLogStatus.EmployerRejected)
+            if (!CanStudentModify(log.Status))
             {
-                TempData["Error"] = "Sadece taslak veya reddedilmiş kayıtlar gönderilebilir.";
+                TempData["Error"] = "Sadece taslak veya revize istenen kayıtlar gönderilebilir.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await GetOwnedApprovedApplicationAsync(log.JobApplicationId, userId) == null)
+            {
+                TempData["Error"] = "Bu günlük artık aktif ve okul onaylı bir staja bağlı değil.";
                 return RedirectToAction(nameof(Index));
             }
 
             log.Status = DailyLogStatus.SentToEmployer;
+            log.IsEmployerApproved = false;
+            log.IsSchoolApproved = false;
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Günlük işverene onay için gönderildi.";
@@ -261,9 +299,9 @@ namespace CareerTrack.Controllers
 
             if (log == null) return NotFound();
 
-            if (log.Status == DailyLogStatus.EmployerApproved || log.Status == DailyLogStatus.SchoolApproved)
+            if (!CanStudentModify(log.Status))
             {
-                TempData["Error"] = "Onaylanmış bir kaydı silemezsiniz.";
+                TempData["Error"] = "Onay sürecindeki veya onaylanmış bir kaydı silemezsiniz.";
                 return RedirectToAction(nameof(Index));
             }
 

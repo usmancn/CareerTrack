@@ -53,6 +53,7 @@ namespace CareerTrack.Models.Entities
         // Navigation Properties
         public ApplicationUser? Student { get; set; }
         public Company? Company { get; set; }
+        public JobPosting? InternshipPosting { get; set; }
         public ICollection<ToDo> ToDos { get; set; } = new List<ToDo>();
     }
 }

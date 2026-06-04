@@ -62,13 +62,23 @@
                     <small class="todo-due-date @(DateTime.Today > todo.DueDate ? "text-danger" : "text-muted")">
                         <i class="bi bi-calendar3 me-1"></i>@todo.DueDate.ToString("dd MMM yyyy")
                     </small>
-                    <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline"
-                          onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Görevi sil?');">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn-delete">
-                            <i class="bi bi-x-lg"></i>
+                    @if (!todo.JobApplicationId.HasValue)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-warning"
+                                data-bs-toggle="modal" data-bs-target="#editTodoModal"
+                                data-id="@todo.Id" data-title="@todo.TaskTitle"
+                                data-due-date="@todo.DueDate.ToString("yyyy-MM-dd")"
+                                title="Görevi düzenle">
+                            <i class="bi bi-pencil"></i>
                         </button>
-                    </form>
+                        <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline"
+                              onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Görevi sil?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-delete">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </form>
+                    }
                 </div>
             }
         </div>
@@ -157,13 +167,16 @@
                             <div class="text-decoration-line-through text-muted">@todo.TaskTitle</div>
                             <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>@todo.DueDate.ToString("dd MMM yyyy")</small>
                         </div>
-                        <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline"
-                              onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Görevi sil?');">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn-delete">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        </form>
+                        @if (!todo.JobApplicationId.HasValue)
+                        {
+                            <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline"
+                                  onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Görevi sil?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-delete">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                        }
                     </div>
                 }
             </div>
@@ -171,6 +184,49 @@
     </div>
 </div>
 
+<div class="modal fade" id="editTodoModal" tabindex="-1" aria-labelledby="editTodoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTodoModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Görevi Düzenle
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="editTodoId" />
+                    <div class="mb-3">
+                        <label for="editTodoTitle" class="form-label">Görev</label>
+                        <input type="text" name="taskTitle" id="editTodoTitle" class="form-control"
+                               minlength="3" maxlength="200" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTodoDueDate" class="form-label">Bitiş Tarihi</label>
+                        <input type="date" name="dueDate" id="editTodoDueDate" class="form-control"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2 me-1"></i>Güncelle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScripts" />
+    <script>
+        document.getElementById('editTodoModal')?.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            document.getElementById('editTodoId').value = button.dataset.id;
+            document.getElementById('editTodoTitle').value = button.dataset.title;
+            document.getElementById('editTodoDueDate').value = button.dataset.dueDate;
+        });
+    </script>
 }

@@ -1,6 +1,7 @@
 @model IEnumerable<CareerTrack.Models.Entities.StudentTask>
 @{
     ViewData["Title"] = "Görev Yönetimi";
+    var currentEmployerId = ViewBag.CurrentEmployerId as string;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -23,6 +24,7 @@
                             <th>Son Tarih</th>
                             <th>Atanma Tarihi</th>
                             <th>Durum</th>
+                            <th class="text-end">İşlemler</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -72,6 +74,26 @@
                                         <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Devam Ediyor</span>
                                     }
                                 </td>
+                                <td class="text-end">
+                                    @if (!task.IsCompleted && task.AssignedByEmployerId == currentEmployerId)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-warning"
+                                                data-bs-toggle="modal" data-bs-target="#editTaskModal"
+                                                data-id="@task.Id" data-title="@task.Title"
+                                                data-description="@task.Description"
+                                                data-due-date="@task.DueDate?.ToString("yyyy-MM-dd")"
+                                                title="Görevi düzenle">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <form asp-action="DeleteTask" asp-route-id="@task.Id" method="post" class="d-inline"
+                                              onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Bu görevi silmek istediğinize emin misiniz?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Görevi sil">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -111,15 +133,17 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Görev Başlığı *</label>
-                        <input type="text" name="title" class="form-control" required placeholder="Örn: Proje kurulumu, Veritabanı tasarımı..." />
+                        <input type="text" name="title" class="form-control" required minlength="3" maxlength="200"
+                               placeholder="Örn: Proje kurulumu, Veritabanı tasarımı..." />
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Açıklama</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="Görev detayları, yapılması gerekenler..."></textarea>
+                        <textarea name="description" class="form-control" rows="3" maxlength="1000"
+                                  placeholder="Görev detayları, yapılması gerekenler..."></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Son Teslim Tarihi</label>
-                        <input type="date" name="dueDate" class="form-control" />
+                        <input type="date" name="dueDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 bg-light">
@@ -132,3 +156,54 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-controller="Employer" asp-action="EditTask" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTaskModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Görevi Düzenle
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="editTaskId" />
+                    <div class="mb-3">
+                        <label for="editTaskTitle" class="form-label fw-bold">Görev Başlığı</label>
+                        <input type="text" name="title" id="editTaskTitle" class="form-control"
+                               minlength="3" maxlength="200" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTaskDescription" class="form-label fw-bold">Açıklama</label>
+                        <textarea name="description" id="editTaskDescription" class="form-control" rows="3" maxlength="1000"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTaskDueDate" class="form-label fw-bold">Son Teslim Tarihi</label>
+                        <input type="date" name="dueDate" id="editTaskDueDate" class="form-control"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2 me-1"></i>Güncelle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('editTaskModal')?.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            document.getElementById('editTaskId').value = button.dataset.id;
+            document.getElementById('editTaskTitle').value = button.dataset.title;
+            document.getElementById('editTaskDescription').value = button.dataset.description || '';
+            document.getElementById('editTaskDueDate').value = button.dataset.dueDate || '';
+        });
+    </script>
+}
