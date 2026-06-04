@@ -777,6 +777,11 @@ body.sidebar-collapsed .main-content {
     transition: transform 240ms var(--motion-ease), box-shadow 240ms var(--motion-ease), border-color 240ms var(--motion-ease), background 240ms var(--motion-ease);
 }
 
+.glass-panel {
+    overflow-wrap: break-word;
+    word-break: break-all;
+}
+
 .card,
 .card-section,
 .table-card,
@@ -2770,7 +2775,7 @@ tr.is-edited .btn-action-save,
 
 .auth-modern-card::before,
 .auth-v2-card::before {
-    position: sticky;
+    position: absolute;
     top: 0;
     z-index: 3;
     display: block;

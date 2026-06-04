@@ -63,7 +63,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p id="modalContent" class="p-3 bg-light rounded"></p>
+                <p id="modalContent" class="p-3 bg-light rounded" style="word-break: break-all; white-space: pre-wrap;"></p>
                 <form id="approveForm" asp-action="ApproveLog" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" id="modalLogId" />
