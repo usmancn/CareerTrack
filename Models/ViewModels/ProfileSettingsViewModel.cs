@@ -5,9 +5,11 @@ namespace CareerTrack.Models.ViewModels
     public class ProfileSettingsViewModel
     {
         [Required(ErrorMessage = "Ad Soyad zorunludur.")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Ad Soyad 3-100 karakter arasında olmalıdır.")]
         [Display(Name = "Ad Soyad")]
         public string FullName { get; set; } = string.Empty;
 
+        [StringLength(100, ErrorMessage = "Bölüm / Departman en fazla 100 karakter olabilir.")]
         [Display(Name = "Bölüm / Departman")]
         public string? Department { get; set; }
 

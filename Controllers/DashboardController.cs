@@ -70,12 +70,24 @@ namespace CareerTrack.Controllers
                 UpcomingTasks = upcomingTasks,
                 IncompleteToDos = incompleteToDos,
                 TotalApplications = activeApplications.Count,
-                OfferedCount = activeApplications.Count(a => a.Status == ApplicationStatus.EmployerAccepted),
+                OfferedCount = activeApplications.Count(a =>
+                    a.Status == ApplicationStatus.EmployerAccepted ||
+                    a.Status == ApplicationStatus.SchoolPending ||
+                    a.Status == ApplicationStatus.SchoolRevision ||
+                    a.Status == ApplicationStatus.SchoolApproved ||
+                    a.Status == ApplicationStatus.Completed),
                 RejectedCount = activeApplications.Count(a => a.Status == ApplicationStatus.Rejected),
                 InReviewCount = activeApplications.Count(a => a.Status >= ApplicationStatus.PreScreening && a.Status <= ApplicationStatus.Interview)
             };
 
             return View(vm);
+        }
+
+        [AllowAnonymous]
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View("~/Views/Shared/Error.cshtml");
         }
     }
 }

@@ -325,6 +325,10 @@ body.sidebar-collapsed .main-content {
     color: #fff;
 }
 
+.brand-mark-icon-only {
+    width: max-content;
+}
+
 .brand-mark strong {
     display: block;
     font-size: 1.14rem;
@@ -736,6 +740,22 @@ body.sidebar-collapsed .main-content {
     width: min(100%, 1340px);
     margin: 0 auto;
     padding: 28px 0 0;
+}
+
+.app-footer {
+    display: flex;
+    width: min(100%, 1340px);
+    margin: 34px auto 0;
+    padding: 16px 2px 0;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid rgba(200, 187, 169, 0.58);
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.app-footer strong {
+    color: var(--ink-3);
 }
 
 .card,
@@ -1271,6 +1291,79 @@ body.sidebar-collapsed .main-content {
 .modal-header,
 .modal-footer {
     background: var(--surface-muted) !important;
+}
+
+.ct-confirm-popup.swal2-popup {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface-solid);
+    color: var(--ink);
+    box-shadow: 0 18px 54px rgba(21, 25, 34, 0.18);
+}
+
+.ct-confirm-show {
+    animation: ct-confirm-in 120ms ease-out;
+}
+
+.ct-confirm-hide {
+    animation: ct-confirm-out 90ms ease-in forwards;
+}
+
+.ct-confirm-icon.swal2-icon {
+    width: 52px;
+    height: 52px;
+    margin: 2px auto 12px;
+}
+
+.ct-confirm-icon.swal2-icon .swal2-icon-content {
+    font-size: 2rem;
+}
+
+.ct-confirm-title.swal2-title {
+    margin: 0 0 8px;
+    padding: 0;
+    color: var(--ink);
+    font-size: 1.18rem;
+    font-weight: 850;
+    line-height: 1.25;
+}
+
+.ct-confirm-text.swal2-html-container {
+    margin: 0;
+    padding: 0 6px;
+    color: var(--ink-3);
+    font-size: 0.94rem;
+    line-height: 1.45;
+}
+
+.ct-confirm-actions.swal2-actions {
+    gap: 10px;
+    margin: 18px 0 0;
+}
+
+.ct-confirm-button {
+    min-width: 88px;
+    border-radius: 8px;
+    font-weight: 750;
+}
+
+@keyframes ct-confirm-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes ct-confirm-out {
+    to {
+        opacity: 0;
+        transform: translateY(2px) scale(0.99);
+    }
 }
 
 .stat-card {
@@ -3262,6 +3355,11 @@ tr.is-edited .btn-action-save,
 
     .content-area {
         padding-top: 18px;
+    }
+
+    .app-footer {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .auth-modern-card {

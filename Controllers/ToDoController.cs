@@ -48,9 +48,10 @@ namespace CareerTrack.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string taskTitle, DateTime dueDate)
         {
-            if (string.IsNullOrWhiteSpace(taskTitle) || taskTitle.Length < 3)
+            var normalizedTitle = taskTitle?.Trim() ?? string.Empty;
+            if (normalizedTitle.Length < 3 || normalizedTitle.Length > 200)
             {
-                TempData["Error"] = "Görev başlığı en az 3 karakter olmalıdır.";
+                TempData["Error"] = "Görev başlığı 3-200 karakter arasında olmalıdır.";
                 return RedirectToAction(nameof(Index));
             }
             if (dueDate < DateTime.Today)
@@ -63,7 +64,7 @@ namespace CareerTrack.Controllers
             _context.ToDos.Add(new ToDo
             {
                 StudentId = userId,
-                TaskTitle = taskTitle,
+                TaskTitle = normalizedTitle,
                 DueDate = dueDate,
                 CreatedAt = DateTime.Now
             });
@@ -80,9 +81,16 @@ namespace CareerTrack.Controllers
             var todo = await _context.ToDos.FirstOrDefaultAsync(t => t.Id == id && t.StudentId == userId);
             if (todo == null) return NotFound();
 
-            if (string.IsNullOrWhiteSpace(taskTitle) || taskTitle.Trim().Length < 3)
+            if (todo.JobApplicationId.HasValue)
             {
-                TempData["Error"] = "Görev başlığı en az 3 karakter olmalıdır.";
+                TempData["Error"] = "Başvuru aşaması görevleri düzenlenemez.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var normalizedTitle = taskTitle?.Trim() ?? string.Empty;
+            if (normalizedTitle.Length < 3 || normalizedTitle.Length > 200)
+            {
+                TempData["Error"] = "Görev başlığı 3-200 karakter arasında olmalıdır.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -92,7 +100,7 @@ namespace CareerTrack.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            todo.TaskTitle = taskTitle.Trim();
+            todo.TaskTitle = normalizedTitle;
             todo.DueDate = dueDate;
 
             await _context.SaveChangesAsync();
@@ -119,6 +127,13 @@ namespace CareerTrack.Controllers
             var userId = await GetUserIdAsync();
             var todo = await _context.ToDos.FirstOrDefaultAsync(t => t.Id == id && t.StudentId == userId);
             if (todo == null) return NotFound();
+
+            if (todo.JobApplicationId.HasValue)
+            {
+                TempData["Error"] = "Başvuru aşaması görevleri silinemez.";
+                return RedirectToAction(nameof(Index));
+            }
+
             _context.ToDos.Remove(todo);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -132,10 +147,11 @@ namespace CareerTrack.Controllers
             var task = await _context.StudentTasks
                 .Include(t => t.JobApplication)
                 .FirstOrDefaultAsync(t => t.Id == id && t.JobApplication!.StudentId == userId);
-            
+
             if (task == null) return NotFound();
-            
+
             task.IsCompleted = !task.IsCompleted;
+            task.CompletedAt = task.IsCompleted ? DateTime.Now : null;
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

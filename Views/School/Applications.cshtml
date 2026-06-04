@@ -73,22 +73,33 @@ else
                                         onclick="openApproveDrawer(@app.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Company?.Name ?? ""))')">
                                     <i class="bi bi-check-circle me-1"></i>Stajı Onayla
                                 </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm w-100" 
-                                        onclick="openRejectDrawer(@app.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Company?.Name ?? ""))')">
-                                    <i class="bi bi-x-circle me-1"></i>Reddet
+                                <button type="button" class="btn @(app.InternshipPostingId.HasValue ? "btn-outline-danger" : "btn-outline-warning") btn-sm w-100"
+                                        onclick="openRejectDrawer(@app.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Company?.Name ?? ""))', @app.InternshipPostingId.HasValue.ToString().ToLower())">
+                                    <i class="bi @(app.InternshipPostingId.HasValue ? "bi-x-circle" : "bi-arrow-repeat") me-1"></i>
+                                    @(app.InternshipPostingId.HasValue ? "Reddet" : "Revize İste")
                                 </button>
                             </div>
                         }
                         else
                         {
+                            var statusClass = app.Status == ApplicationStatus.SchoolApproved
+                                ? "bg-success"
+                                : app.Status == ApplicationStatus.SchoolRevision
+                                    ? "bg-warning text-dark"
+                                    : "bg-danger";
+                            var statusText = app.Status == ApplicationStatus.SchoolApproved
+                                ? "Staj Devam Ediyor"
+                                : app.Status == ApplicationStatus.SchoolRevision
+                                    ? "Revize İstendi"
+                                    : "Reddedildi";
                             <div class="d-flex flex-column align-items-end h-100 justify-content-center">
-                                <span class="badge @(app.Status == ApplicationStatus.SchoolApproved ? "bg-success" : "bg-danger") px-3 py-2 fs-6 mb-2 rounded-pill shadow-sm">
-                                    <i class="bi @(app.Status == ApplicationStatus.SchoolApproved ? "bi-check-circle" : "bi-x-circle") me-1"></i>
-                                    @(app.Status == ApplicationStatus.SchoolApproved ? "Staj Devam Ediyor" : "Reddedildi")
+                                <span class="badge @statusClass px-3 py-2 fs-6 mb-2 rounded-pill shadow-sm">
+                                    <i class="bi @(app.Status == ApplicationStatus.SchoolApproved ? "bi-check-circle" : "bi-arrow-repeat") me-1"></i>
+                                    @statusText
                                 </span>
                                 @if (!string.IsNullOrEmpty(app.SchoolNote))
                                 {
-                                    <div class="text-muted small mt-1 bg-dark bg-opacity-30 p-2 rounded border-start border-3 @(app.Status == ApplicationStatus.SchoolApproved ? "border-success" : "border-danger")">
+                                    <div class="text-muted small mt-1 bg-dark bg-opacity-30 p-2 rounded border-start border-3 @(app.Status == ApplicationStatus.SchoolApproved ? "border-success" : "border-warning")">
                                         <i class="bi bi-chat-left-text me-1 text-primary"></i> @app.SchoolNote
                                     </div>
                                 }
@@ -144,7 +155,9 @@ else
     <div class="drawer-overlay" onclick="closePremiumDrawer('rejectDrawer')"></div>
     <div class="drawer-content">
         <div class="drawer-header">
-            <span class="drawer-title text-danger"><i class="bi bi-x-circle-fill text-danger me-2"></i>Stajı Reddet / Revize İste</span>
+            <span class="drawer-title text-warning" id="rejectDrawerTitle">
+                <i class="bi bi-arrow-repeat text-warning me-2"></i>Başvuru İçin Revize İste
+            </span>
             <button type="button" class="btn-drawer-close" onclick="closePremiumDrawer('rejectDrawer')">
                 <i class="bi bi-x"></i>
             </button>
@@ -156,20 +169,20 @@ else
                 <input type="hidden" name="approve" value="false" />
                 
                 <div class="mb-4">
-                    <p class="text-secondary small">
-                        <strong id="rejectStudentName" class="text-white"></strong> adlı öğrencinin <strong id="rejectCompanyName" class="text-white"></strong> şirketindeki stajını staj şartları okul yönergelerine uymuyorsa reddedebilir veya revize isteyebilirsiniz.
+                    <p class="text-secondary small" id="rejectDrawerDescription">
+                        <strong id="rejectStudentName" class="text-white"></strong> adlı öğrencinin <strong id="rejectCompanyName" class="text-white"></strong> şirketindeki başvurusunu gerekli düzeltmeleri yapması için geri gönderiyorsunuz.
                     </p>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold text-danger">Ret / Revize Gerekçesi (Zorunlu)</label>
-                    <textarea name="schoolNote" class="form-control glass-input border-danger" rows="4" placeholder="Lütfen neden reddettiğinizi yazın (örn: Staj tarihleri akademik takvimle uyuşmuyor)..." required></textarea>
+                    <label class="form-label fw-bold text-warning" id="rejectReasonLabel">Revize Gerekçesi (Zorunlu)</label>
+                    <textarea name="schoolNote" class="form-control glass-input border-warning" rows="4" placeholder="Lütfen düzeltilmesi gereken noktaları yazın (örn: Staj tarihleri akademik takvimle uyuşmuyor)..." required></textarea>
                 </div>
                 
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closePremiumDrawer('rejectDrawer')">İptal</button>
-                    <button type="submit" class="btn btn-danger flex-fill">
-                        <i class="bi bi-x-lg me-1"></i>Reddet
+                    <button type="submit" class="btn btn-warning flex-fill text-dark fw-bold" id="rejectSubmitButton">
+                        <i class="bi bi-arrow-repeat me-1"></i>Revize İçin Gönder
                     </button>
                 </div>
             </form>
@@ -186,10 +199,34 @@ else
             window.openPremiumDrawer('approveDrawer');
         }
 
-        function openRejectDrawer(appId, studentName, companyName) {
+        function openRejectDrawer(appId, studentName, companyName, isPostingApplication) {
             document.getElementById('rejectAppId').value = appId;
             document.getElementById('rejectStudentName').textContent = studentName;
             document.getElementById('rejectCompanyName').textContent = companyName;
+
+            const title = document.getElementById('rejectDrawerTitle');
+            const description = document.getElementById('rejectDrawerDescription');
+            const label = document.getElementById('rejectReasonLabel');
+            const submit = document.getElementById('rejectSubmitButton');
+
+            if (isPostingApplication) {
+                title.innerHTML = '<i class="bi bi-x-circle text-danger me-2"></i>İlan Başvurusunu Reddet';
+                title.classList.remove('text-warning');
+                title.classList.add('text-danger');
+                description.lastChild.textContent = ' şirketindeki ilan başvurusunu reddediyorsunuz. İlan bilgileri öğrenci tarafından değiştirilemez.';
+                label.textContent = 'Ret Gerekçesi (Zorunlu)';
+                submit.className = 'btn btn-danger flex-fill';
+                submit.innerHTML = '<i class="bi bi-x-lg me-1"></i>Reddet';
+            } else {
+                title.innerHTML = '<i class="bi bi-arrow-repeat text-warning me-2"></i>Başvuru İçin Revize İste';
+                title.classList.remove('text-danger');
+                title.classList.add('text-warning');
+                description.lastChild.textContent = ' şirketindeki başvurusunu gerekli düzeltmeleri yapması için geri gönderiyorsunuz.';
+                label.textContent = 'Revize Gerekçesi (Zorunlu)';
+                submit.className = 'btn btn-warning flex-fill text-dark fw-bold';
+                submit.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Revize İçin Gönder';
+            }
+
             window.openPremiumDrawer('rejectDrawer');
         }
     </script>

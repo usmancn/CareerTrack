@@ -33,6 +33,14 @@ namespace CareerTrack.Data
                 .HasForeignKey(a => a.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // JobApplication → JobPosting (opsiyonel ilan başvurusu)
+            builder.Entity<JobApplication>()
+                .HasOne(a => a.InternshipPosting)
+                .WithMany()
+                .HasForeignKey(a => a.InternshipPostingId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
             // DailyLog → ApplicationUser
             builder.Entity<DailyLog>()
                 .HasOne(d => d.Student)

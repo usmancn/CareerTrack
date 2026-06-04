@@ -7,6 +7,8 @@ namespace CareerTrack.Models.ViewModels
     {
         public CompanyFormViewModel Form { get; set; } = new();
         public List<Company> Companies { get; set; } = new();
+        public HashSet<int> LinkedEmployerCompanyIds { get; set; } = new();
+        public HashSet<int> PendingEmployerCompanyIds { get; set; } = new();
     }
 
     public class CompanyFormViewModel

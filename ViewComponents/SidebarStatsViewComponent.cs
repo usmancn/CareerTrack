@@ -59,10 +59,10 @@ namespace CareerTrack.ViewComponents
                 return Content(string.Empty);
             }
 
-            var model = new SidebarStatsViewModel 
-            { 
-                Count = count, 
-                Label = label ?? string.Empty, 
+            var model = new SidebarStatsViewModel
+            {
+                Count = count,
+                Label = label ?? string.Empty,
                 Icon = icon ?? string.Empty,
                 BadgeClass = badgeClass ?? string.Empty
             };

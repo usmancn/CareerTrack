@@ -1,4 +1,4 @@
-# 🎓 CareerTrack — Staj ve Mülakat Yönetim Sistemi
+# 🎓 CareerTrack — Staj ve Kariyer Takip Sistemi
 
 > Web Programlama Dersi Final Projesi  
 > ASP.NET Core MVC (.NET 10) • EF Core Code-First • SQLite • Bootstrap 5
@@ -7,14 +7,16 @@
 
 ## 📸 Proje Hakkında
 
-**CareerTrack**, öğrencilerin staj başvuru süreçlerini yönetmelerine yarayan kapsamlı bir web uygulamasıdır. Öğrenciler başvurularını, mülakat aşamalarını ve staj günlüklerini takip edebilir; akademisyenler ise tüm süreçleri genel istatistiklerle izleyebilir.
+**CareerTrack**, öğrencilerin staj başvuru süreçlerini yönetmelerine yarayan kapsamlı bir web uygulamasıdır. Öğrenciler ilanlara başvurabilir, işveren değerlendirme aşamalarını takip edebilir, okul onayı sonrasında staj günlüklerini tutabilir ve görevlerini yönetebilir.
 
 ### Özellikler
 
 | Rol | Özellikler |
 |---|---|
-| **Öğrenci** | Şirket başvurusu ekleme, mülakat aşamalarını kaydetme, staj defteri tutma, görev listesi |
-| **Admin/Koordinatör** | Tüm öğrencilerin başvurularını görme, staj günlüklerini onaylama, şirket yönetimi |
+| **Öğrenci** | İlan veya şirket başvurusu oluşturma, süreç aşamalarını takip etme, staj defteri tutma, görev listesi |
+| **İşveren** | İlan yayınlama, başvuruları değerlendirme, staj görevleri atama, günlükleri onaylama |
+| **Okul** | Öğrencileri takip etme, işveren kabulü sonrası stajı onaylama, günlükleri onaylama veya revize isteme |
+| **Admin** | Kullanıcı ve rol yönetimi, şirket yönetimi, tüm başvuru ve günlükleri izleme |
 
 ---
 
@@ -68,8 +70,7 @@ dotnet tool install --global dotnet-ef
 # PATH'e ekle (macOS/Linux — tek seferlik)
 export PATH="$PATH:$HOME/.dotnet/tools"
 
-# Veritabanını oluştur
-dotnet ef migrations add InitialCreate
+# Mevcut migration'ları veritabanına uygula
 dotnet ef database update
 
 # Çalıştır
@@ -84,8 +85,12 @@ Uygulama açılır: **http://localhost:5000**
 
 | Rol | E-posta | Şifre |
 |---|---|---|
-| **Admin / Koordinatör** | `admin@careertrack.com` | `Admin123!` |
-| **Öğrenci** | `/Account/Register` ile kayıt ol | Kendin belirle |
+| **Admin** | `admin@careertrack.com` | `Admin123!` |
+| **Okul** | `okul@careertrack.com` | `Okul123!` |
+| **İşveren** | `isveren@careertrack.com` | `Isveren123!` |
+| **Öğrenci** | `ogrenci@careertrack.com` | `Ogrenci123!` |
+
+Yeni kayıt olan kullanıcılar otomatik olarak **Öğrenci** rolü alır. İşveren, Okul ve Admin rolleri Admin panelinden atanır.
 
 ---
 
@@ -93,12 +98,19 @@ Uygulama açılır: **http://localhost:5000**
 
 ```
 ApplicationUser (ASP.NET Core Identity)
-    ├── JobApplications (1-N)
-    │       ├── Company (N-1)
-    │       ├── Interviews (1-N)  ← Mülakat aşamaları
-    │       └── Offer (1-1)       ← Teklif detayları
+    ├── JobApplications (1-N)     ← Öğrenci başvuruları
     ├── DailyLogs (1-N)           ← Staj defteri
-    └── ToDos (1-N)               ← Görev listesi
+    ├── ToDos (1-N)               ← Bireysel ve süreç görevleri
+    └── JobPostings (1-N)         ← İşveren ilanları
+
+Company
+    ├── JobApplications (1-N)
+    └── JobPostings (1-N)
+
+JobApplication
+    ├── DailyLogs (1-N)
+    ├── ToDos (1-N)
+    └── StudentTasks (1-N)
 ```
 
 ---
@@ -107,23 +119,23 @@ ApplicationUser (ASP.NET Core Identity)
 
 ```
 CareerTrack/
-├── Controllers/          ← 8 controller (Account, Dashboard, Application...)
+├── Controllers/          ← 9 controller (Account, Admin, School, Employer...)
 ├── Models/
 │   ├── Entities/         ← EF Core entity sınıfları
-│   ├── Enums/            ← InternshipType, ApplicationStatus, InterviewStage...
+│   ├── Enums/            ← InternshipType, ApplicationStatus, DailyLogStatus
 │   └── ViewModels/       ← StudentDashboardViewModel, LoginViewModel...
 ├── Data/
 │   ├── ApplicationDbContext.cs   ← EF Core DbContext + Fluent API
 │   └── SeedData.cs               ← Rol ve admin seed
 ├── Views/
-│   ├── Shared/_Layout.cshtml     ← Ortak sidebar + header
+│   ├── Shared/_Layout.cshtml     ← Ortak sidebar + header + footer
 │   ├── Dashboard/
 │   ├── Application/
-│   ├── Interview/
-│   ├── Offer/
 │   ├── DailyLog/
 │   ├── ToDo/
 │   ├── Admin/
+│   ├── School/
+│   ├── Employer/
 │   └── Account/
 ├── wwwroot/              ← CSS, JS
 ├── Program.cs
@@ -138,16 +150,15 @@ CareerTrack/
 | Kriter | Detay |
 |---|---|
 | **EF Core Code-First** | `ApplicationDbContext` + Fluent API + `dotnet ef migrations` |
-| **Role-Based Auth** | `[Authorize(Roles="Admin")]` & `[Authorize(Roles="Student")]` |
-| **_Layout.cshtml** | Sol sidebar + üst header — tüm sayfalarda ortak |
+| **Role-Based Auth** | Admin, School, Employer ve Student rollerine özel controller yetkilendirmesi |
+| **_Layout.cshtml** | Sol sidebar + üst header + footer — tüm sayfalarda ortak |
 | **ViewModel** | `StudentDashboardViewModel` → 3 tablodan veri tek sınıfta |
-| **ViewBag** | `ViewBag.PendingTodos`, `ViewBag.UpcomingInterviews` → header badge |
+| **ViewBag / ViewData** | `ViewBag.StudentTasks`, `ViewBag.ApprovedApplications`, `ViewData["Title"]` |
 | **Data Annotations** | `[Required]`, `[StringLength]`, `[DataType]`, `[Range]` |
 | **ModelState.AddModelError** | Geçmiş tarih engeli, gün tekrarı kontrolü |
 | **LINQ** | `Where`, `OrderBy`, `Count`, `Take`, `Include` |
-| **Enum** | InternshipType, ApplicationStatus, InterviewStage, InterviewResult |
-| **1-N İlişki** | `JobApplication` → `Interview` |
-| **1-1 İlişki** | `JobApplication` → `Offer` |
+| **Enum** | `InternshipType`, `ApplicationStatus`, `DailyLogStatus` |
+| **1-N İlişki** | `JobApplication` → `DailyLog`, `ToDo`, `StudentTask` |
 
 ---
 

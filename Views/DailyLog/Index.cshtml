@@ -47,6 +47,7 @@ else
                 CareerTrack.Models.Enums.DailyLogStatus.SentToEmployer => "log-pending",
                 CareerTrack.Models.Enums.DailyLogStatus.EmployerApproved => "log-revision",
                 CareerTrack.Models.Enums.DailyLogStatus.EmployerRejected => "border-danger",
+                CareerTrack.Models.Enums.DailyLogStatus.SchoolRejected => "border-warning",
                 _ => ""
             };
 
@@ -75,6 +76,9 @@ else
                                 case CareerTrack.Models.Enums.DailyLogStatus.SchoolApproved:
                                     <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Okul Onayladı</span>
                                     break;
+                                case CareerTrack.Models.Enums.DailyLogStatus.SchoolRejected:
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat me-1"></i>Okul Revize İstedi</span>
+                                    break;
                             }
                         </div>
                     </div>
@@ -102,7 +106,9 @@ else
                             <i class="bi bi-eye"></i> İncele
                         </button>
                         
-                        @if (log.Status == CareerTrack.Models.Enums.DailyLogStatus.Draft || log.Status == CareerTrack.Models.Enums.DailyLogStatus.EmployerRejected)
+                        @if (log.Status == CareerTrack.Models.Enums.DailyLogStatus.Draft ||
+                             log.Status == CareerTrack.Models.Enums.DailyLogStatus.EmployerRejected ||
+                             log.Status == CareerTrack.Models.Enums.DailyLogStatus.SchoolRejected)
                         {
                             <div class="d-flex gap-1">
                                 <form asp-action="SendToEmployer" asp-route-id="@log.Id" method="post" class="d-inline"
@@ -331,6 +337,9 @@ else
             } else if (status === "EmployerRejected") {
                 badge.classList.add("bg-danger");
                 badge.textContent = "İşveren Reddetti";
+            } else if (status === "SchoolRejected") {
+                badge.classList.add("bg-warning", "text-dark");
+                badge.textContent = "Okul Revize İstedi";
             } else {
                 badge.classList.add("bg-secondary");
                 badge.textContent = "Taslak";

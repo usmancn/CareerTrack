@@ -21,7 +21,9 @@
                 <th>E-posta</th>
                 <th>Bölüm</th>
                 <th>Mevcut Rol</th>
-                <th class="text-end">Rol Atama</th>
+                <th>Bağlı Şirket</th>
+                <th>Rol Atama</th>
+                <th class="text-end">İşlemler</th>
             </tr>
         </thead>
         <tbody>
@@ -34,15 +36,42 @@
                         {
                             <span class="badge bg-secondary ms-2">Siz</span>
                         }
+                        @if (user.IsEmployerPendingApproval)
+                        {
+                            <span class="badge bg-warning text-dark ms-2">Onay bekliyor</span>
+                        }
                     </td>
                     <td>@user.Email</td>
                     <td>@(user.Department ?? "-")</td>
-                    <td><span class="badge bg-primary">@user.CurrentRole</span></td>
                     <td>
-                        <form asp-action="UpdateUserRole" method="post" class="role-update-form">
+                        <span class="badge bg-primary">@user.CurrentRole</span>
+                        @if (user.IsEmployerPendingApproval)
+                        {
+                            <span class="badge bg-light text-warning border ms-1">İşveren kaydı</span>
+                        }
+                    </td>
+                    <td>
+                        <select name="companyId" form="role-form-@user.UserId"
+                                class="form-select form-select-sm user-company-select"
+                                data-user-company-select="@user.UserId"
+                                aria-label="Bağlı şirket"
+                                @(user.IsCurrentUser || user.SelectedRole != AppRoles.Employer ? "disabled" : "")>
+                            <option value="">-- Şirket seçiniz --</option>
+                            @foreach (var company in Model.Companies)
+                            {
+                                <option value="@company.Id" selected="@(company.Id == user.CompanyId)">
+                                    @company.Name@if (!company.IsApproved) { <text> (Onay bekliyor)</text> }
+                                </option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <form id="role-form-@user.UserId" asp-action="UpdateUserRole" method="post" class="role-update-form">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="userId" value="@user.UserId" />
-                            <select name="role" class="form-select form-select-sm" @(user.IsCurrentUser ? "disabled" : "")>
+                            <select name="role" class="form-select form-select-sm"
+                                    data-user-role-select="@user.UserId"
+                                    @(user.IsCurrentUser ? "disabled" : "")>
                                 @foreach (var role in AppRoles.All)
                                 {
                                     if (role == user.SelectedRole)
@@ -55,13 +84,58 @@
                                     }
                                 }
                             </select>
-                            <button type="submit" class="btn btn-sm btn-outline-primary" @(user.IsCurrentUser ? "disabled" : "")>
+                            <button type="submit" class="btn btn-sm btn-outline-primary"
+                                    title="Rol ve şirket bağlantısını güncelle"
+                                    @(user.IsCurrentUser ? "disabled" : "")>
                                 <i class="bi bi-check2"></i>
                             </button>
                         </form>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-2 justify-content-end">
+                            @if (user.IsEmployerPendingApproval)
+                            {
+                                <form asp-action="ApproveEmployer" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="btn btn-sm btn-success" title="İşveren ve şirketi onayla">
+                                        <i class="bi bi-check2-circle me-1"></i>Onayla
+                                    </button>
+                                </form>
+                            }
+                            <form asp-action="DeleteUser" method="post" class="d-inline"
+                                  onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Bu kullanıcıyı silmek istediğinizden emin misiniz?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@user.UserId" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger btn-icon-action"
+                                        title="Kullanıcıyı sil"
+                                        @(user.IsCurrentUser ? "disabled" : "")>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('[data-user-role-select]').forEach(function (roleSelect) {
+            const userId = roleSelect.dataset.userRoleSelect;
+            const companySelect = document.querySelector(`[data-user-company-select="${userId}"]`);
+            if (!companySelect) return;
+
+            roleSelect.addEventListener('change', function () {
+                const isEmployer = roleSelect.value === '@AppRoles.Employer';
+                companySelect.disabled = !isEmployer;
+                companySelect.required = isEmployer;
+                companySelect.classList.toggle('opacity-50', !isEmployer);
+            });
+
+            companySelect.classList.toggle('opacity-50', roleSelect.value !== '@AppRoles.Employer');
+        });
+    </script>
+}

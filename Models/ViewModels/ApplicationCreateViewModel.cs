@@ -34,6 +34,7 @@ namespace CareerTrack.Models.ViewModels
         public DateTime? InternshipEndDate { get; set; }
 
         [Display(Name = "Toplam Staj Günü")]
+        [Range(1, 365, ErrorMessage = "Toplam staj günü 1-365 arasında olmalıdır.")]
         public int? TotalInternshipDays { get; set; }
 
         [Display(Name = "Durum")]

@@ -59,9 +59,7 @@
                         _ => "bg-secondary"
                     };
 
-                    var isProcessComplete = app.Status == ApplicationStatus.SchoolApproved
-                                        || app.Status == ApplicationStatus.EmployerAccepted
-                                        || app.Status == ApplicationStatus.Completed;
+                    var isProcessComplete = app.Status >= ApplicationStatus.EmployerAccepted;
 
                     var latestTodo2 = app.ToDos?.OrderByDescending(t => t.Id).FirstOrDefault();
                     var isStudentPending2 = latestTodo2 != null && !latestTodo2.IsCompleted;
@@ -99,10 +97,13 @@
                                             <i class="bi bi-clipboard-check me-1"></i>Değerlendir
                                         </button>
                                     }
-                                    <button class="btn btn-sm btn-outline-success rounded-pill" title="Sonraki Aşamaya Taşı"
-                                            onclick="openUpdateStageDrawer(@app.Id, @((int)app.Status), '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(statusText2))')">
-                                        <i class="bi bi-arrow-right-circle me-1"></i>Aşama İlerlet
-                                    </button>
+                                    @if (!isStudentPending2)
+                                    {
+                                        <button class="btn btn-sm btn-outline-success rounded-pill" title="Sonraki Aşamaya Taşı"
+                                                onclick="openUpdateStageDrawer(@app.Id, @((int)app.Status), '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(statusText2))')">
+                                            <i class="bi bi-arrow-right-circle me-1"></i>Aşama İlerlet
+                                        </button>
+                                    }
                                     <form asp-action="UpdateApplicationStatus" method="post" class="d-inline"
                                           onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Bu adayı reddetmek istediğinizden emin misiniz?');">
                                         @Html.AntiForgeryToken()
@@ -246,6 +247,21 @@ else
             document.getElementById('usAppId').value = appId;
             document.getElementById('usStudentName').textContent = studentName;
             document.getElementById('usStageText').textContent = stageText;
+
+            const statusSelect = document.getElementById('usStatus');
+            const validOptions = Array.from(statusSelect.options).filter(option => {
+                const optionStatus = Number(option.value);
+                const isValid = optionStatus > currentStatus &&
+                    optionStatus <= @((int)ApplicationStatus.EmployerAccepted);
+                option.hidden = !isValid;
+                option.disabled = !isValid;
+                return isValid;
+            });
+
+            if (validOptions.length > 0) {
+                statusSelect.value = validOptions[0].value;
+            }
+
             window.openPremiumDrawer('updateStageDrawer');
         }
     </script>

@@ -62,18 +62,32 @@ namespace CareerTrack.Controllers
         public async Task<IActionResult> Students()
         {
             var studentUsers = await _userManager.GetUsersInRoleAsync(AppRoles.Student);
+            var studentIds = studentUsers.Select(s => s.Id).ToList();
+
+            var applications = await _context.JobApplications
+                .Include(a => a.Company)
+                .Where(a => studentIds.Contains(a.StudentId))
+                .ToListAsync();
+
+            var dailyLogs = await _context.DailyLogs
+                .Where(d => studentIds.Contains(d.StudentId))
+                .ToListAsync();
+
+            var applicationsByStudent = applications
+                .GroupBy(a => a.StudentId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var dailyLogsByStudent = dailyLogs
+                .GroupBy(d => d.StudentId)
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             var students = new List<SchoolStudentDetailViewModel>();
             foreach (var s in studentUsers.OrderBy(s => s.FullName))
             {
-                var apps = await _context.JobApplications
-                    .Include(a => a.Company)
-                    .Where(a => a.StudentId == s.Id)
-                    .ToListAsync();
-
-                var logs = await _context.DailyLogs
-                    .Where(d => d.StudentId == s.Id)
-                    .ToListAsync();
+                applicationsByStudent.TryGetValue(s.Id, out var apps);
+                dailyLogsByStudent.TryGetValue(s.Id, out var logs);
+                apps ??= new List<JobApplication>();
+                logs ??= new List<DailyLog>();
 
                 students.Add(new SchoolStudentDetailViewModel
                 {
@@ -117,6 +131,19 @@ namespace CareerTrack.Controllers
             var app = await _context.JobApplications.FindAsync(id);
             if (app == null) return NotFound();
 
+            if (app.Status != ApplicationStatus.EmployerAccepted &&
+                app.Status != ApplicationStatus.SchoolPending)
+            {
+                TempData["Error"] = "Yalnızca okul onayı bekleyen başvurular değerlendirilebilir.";
+                return RedirectToAction(nameof(Applications));
+            }
+
+            if (!approve && string.IsNullOrWhiteSpace(schoolNote))
+            {
+                TempData["Error"] = "Revize isteği için öğrenciye açıklayıcı bir not yazmalısınız.";
+                return RedirectToAction(nameof(Applications));
+            }
+
             if (approve)
             {
                 // Okul onayladı → staj başlar, öğrenci günlük yazabilir
@@ -124,27 +151,31 @@ namespace CareerTrack.Controllers
             }
             else
             {
-                // Okul reddetti veya revize istedi
-                app.Status = ApplicationStatus.Rejected;
+                // İlan verileri öğrenci tarafından değiştirilemez; manuel başvuru ise revize edilebilir
+                app.Status = app.InternshipPostingId.HasValue
+                    ? ApplicationStatus.Rejected
+                    : ApplicationStatus.SchoolRevision;
             }
-            app.SchoolNote = schoolNote;
+            app.SchoolNote = string.IsNullOrWhiteSpace(schoolNote) ? null : schoolNote.Trim();
             await _context.SaveChangesAsync();
 
             TempData["Success"] = approve
                 ? "Staj onaylandı! Öğrenci artık günlük yazabilir."
-                : "Staj talebi reddedildi.";
+                : app.InternshipPostingId.HasValue
+                    ? "İlan başvurusu reddedildi."
+                    : "Başvuru revize edilmesi için öğrenciye geri gönderildi.";
             return RedirectToAction(nameof(Applications));
         }
 
-        // GET: /School/DailyLogs — İşveren onaylı günlükleri listele
+        // GET: /School/DailyLogs — Okul tüm günlükleri izler, yalnızca işveren onaylı olanları değerlendirir.
         public async Task<IActionResult> DailyLogs()
         {
             var logs = await _context.DailyLogs
                 .Include(d => d.Student)
                 .Include(d => d.JobApplication)
                     .ThenInclude(a => a!.Company)
-                .Where(d => d.Status == DailyLogStatus.EmployerApproved)
-                .OrderByDescending(d => d.LogDate)
+                .OrderBy(d => d.Status == DailyLogStatus.EmployerApproved ? 0 : 1)
+                .ThenByDescending(d => d.LogDate)
                 .ToListAsync();
 
             return View(logs);
@@ -158,6 +189,24 @@ namespace CareerTrack.Controllers
             var log = await _context.DailyLogs.FindAsync(id);
             if (log == null) return NotFound();
 
+            if (log.Status != DailyLogStatus.EmployerApproved)
+            {
+                TempData["Error"] = "Yalnızca işveren tarafından onaylanmış günlükler okul tarafından değerlendirilebilir.";
+                return RedirectToAction(nameof(DailyLogs));
+            }
+
+            if (!approve && string.IsNullOrWhiteSpace(schoolNote))
+            {
+                TempData["Error"] = "Revize isteği için öğrenciye açıklayıcı bir not yazmalısınız.";
+                return RedirectToAction(nameof(DailyLogs));
+            }
+
+            if (schoolNote?.Trim().Length > 500)
+            {
+                TempData["Error"] = "Okul notu en fazla 500 karakter olabilir.";
+                return RedirectToAction(nameof(DailyLogs));
+            }
+
             if (approve)
             {
                 log.IsSchoolApproved = true;
@@ -168,7 +217,7 @@ namespace CareerTrack.Controllers
                 log.IsSchoolApproved = false;
                 log.Status = DailyLogStatus.SchoolRejected;
             }
-            log.SchoolNote = schoolNote;
+            log.SchoolNote = string.IsNullOrWhiteSpace(schoolNote) ? null : schoolNote.Trim();
             await _context.SaveChangesAsync();
 
             TempData["Success"] = approve ? "Günlük onaylandı." : "Günlük revize gerekli olarak işaretlendi.";

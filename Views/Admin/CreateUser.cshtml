@@ -33,7 +33,7 @@
 
             <div class="mb-3">
                 <label asp-for="Role" class="form-label fw-bold"></label>
-                <select asp-for="Role" class="form-select">
+                <select asp-for="Role" class="form-select" id="createUserRole">
                     <option value="@AppRoles.Student">Öğrenci</option>
                     <option value="@AppRoles.Employer">İşveren</option>
                     <option value="@AppRoles.School">Okul Personeli / Koordinatör</option>
@@ -46,6 +46,15 @@
                 <label asp-for="Department" class="form-label fw-bold"></label>
                 <input asp-for="Department" class="form-control" placeholder="Bölüm, Fakülte veya Kurum adı (Opsiyonel)" />
                 <span asp-validation-for="Department" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="CompanyId" class="form-label fw-bold"></label>
+                <select asp-for="CompanyId" asp-items="Model.Companies" class="form-select" id="createUserCompany">
+                    <option value="">-- İşveren için şirket seçiniz --</option>
+                </select>
+                <span asp-validation-for="CompanyId" class="text-danger small"></span>
+                <small class="text-muted">Yalnızca İşveren rolü seçildiğinde zorunludur.</small>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-4">
@@ -62,4 +71,18 @@
 
 @section Scripts {
     <partial name="_ValidationScripts" />
+    <script>
+        const roleSelect = document.getElementById('createUserRole');
+        const companySelect = document.getElementById('createUserCompany');
+
+        function updateCompanyRequirement() {
+            const isEmployer = roleSelect.value === '@AppRoles.Employer';
+            companySelect.disabled = !isEmployer;
+            companySelect.required = isEmployer;
+            companySelect.closest('.mb-4')?.classList.toggle('opacity-50', !isEmployer);
+        }
+
+        roleSelect.addEventListener('change', updateCompanyRequirement);
+        updateCompanyRequirement();
+    </script>
 }

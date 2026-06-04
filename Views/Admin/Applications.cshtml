@@ -56,12 +56,18 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@app.Id" />
                             <select name="status" class="form-select form-select-sm" aria-label="Başvuru durumunu seç">
-                                <option value="@ApplicationStatus.SchoolApproved" selected="@(app.Status == ApplicationStatus.SchoolApproved)">Okul Onaylı</option>
+                                <option value="@ApplicationStatus.Pending" selected="@(app.Status == ApplicationStatus.Pending)">Yeni Başvuru</option>
                                 <option value="@ApplicationStatus.PreScreening" selected="@(app.Status == ApplicationStatus.PreScreening)">Ön Eleme</option>
                                 <option value="@ApplicationStatus.AptitudeTest" selected="@(app.Status == ApplicationStatus.AptitudeTest)">Genel Yetenek Testi</option>
                                 <option value="@ApplicationStatus.LanguageTest" selected="@(app.Status == ApplicationStatus.LanguageTest)">Dil Sınavı</option>
                                 <option value="@ApplicationStatus.Interview" selected="@(app.Status == ApplicationStatus.Interview)">Mülakat</option>
-                                <option value="@ApplicationStatus.EmployerAccepted" selected="@(app.Status == ApplicationStatus.EmployerAccepted)">Kabul Et</option>
+                                <option value="@ApplicationStatus.EmployerAccepted" selected="@(app.Status == ApplicationStatus.EmployerAccepted)">İşveren Kabul Etti</option>
+                                <option value="@ApplicationStatus.SchoolPending" selected="@(app.Status == ApplicationStatus.SchoolPending)">Okul Onayı Bekliyor</option>
+                                @if (!app.InternshipPostingId.HasValue)
+                                {
+                                    <option value="@ApplicationStatus.SchoolRevision" selected="@(app.Status == ApplicationStatus.SchoolRevision)">Okul Revize İstedi</option>
+                                }
+                                <option value="@ApplicationStatus.SchoolApproved" selected="@(app.Status == ApplicationStatus.SchoolApproved)">Okul Onaylı</option>
                                 <option value="@ApplicationStatus.Rejected" selected="@(app.Status == ApplicationStatus.Rejected)">Reddet</option>
                                 <option value="@ApplicationStatus.Completed" selected="@(app.Status == ApplicationStatus.Completed)">Staj Tamamlandı</option>
                             </select>

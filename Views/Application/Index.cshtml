@@ -249,11 +249,15 @@
                                             <i class="bi bi-journal-plus me-1"></i>Günlük Yaz
                                         </a>
                                     }
-                                    @if (app.Status == ApplicationStatus.Pending || app.Status == ApplicationStatus.SchoolRevision)
+                                    @if ((app.Status == ApplicationStatus.Pending || app.Status == ApplicationStatus.SchoolRevision) &&
+                                         !app.InternshipPostingId.HasValue)
                                     {
                                         <a asp-action="Edit" asp-route-id="@app.Id" class="btn btn-sm btn-outline-warning w-100">
                                             <i class="bi bi-pencil me-1"></i>Düzenle
                                         </a>
+                                    }
+                                    @if (app.Status == ApplicationStatus.Pending || app.Status == ApplicationStatus.SchoolRevision)
+                                    {
                                         <form asp-action="Delete" asp-route-id="@app.Id" method="post"
                                               onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Başvuruyu silmek istiyor musunuz?');">
                                             @Html.AntiForgeryToken()

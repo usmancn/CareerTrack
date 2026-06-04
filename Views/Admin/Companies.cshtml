@@ -65,7 +65,13 @@
                                 {
                                     <tr>
                                         <td class="fw-semibold">@c.Name</td>
-                                        <td>@c.Sector</td>
+                                        <td>
+                                            @c.Sector
+                                            @if (Model.PendingEmployerCompanyIds.Contains(c.Id))
+                                            {
+                                                <span class="badge bg-info-subtle text-info border ms-2">İşveren kaydı</span>
+                                            }
+                                        </td>
                                         <td>@c.Location</td>
                                         <td>
                                             @if (c.CreatedBy != null)
@@ -118,6 +124,8 @@
                 <tbody>
                     @foreach (var c in approvedCompanies)
                     {
+                        var canDelete = !c.JobApplications.Any() &&
+                                        !c.JobPostings.Any();
                         <tr>
                             <td>
                                 <form id="company-edit-@c.Id" asp-action="EditCompany" method="post">
@@ -148,7 +156,9 @@
                                 <form asp-action="DeleteCompany" asp-route-id="@c.Id" method="post" class="d-inline"
                                       onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Bu şirketi silmek istediğinizden emin misiniz?');">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-icon-action" @(c.JobApplications.Any() ? "disabled" : "") title="Sil">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-icon-action"
+                                            @(!canDelete ? "disabled" : "")
+                                            title="@(canDelete ? "Sil" : "Başvurusu veya ilanı olan şirket silinemez")">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>

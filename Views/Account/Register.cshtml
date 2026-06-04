@@ -39,22 +39,17 @@
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-            <!-- Role Selection -->
             <div class="form-group mb-4">
-                <label class="form-label">Hesap Türü</label>
-                <div class="d-flex gap-3">
-                    <div class="flex-fill">
-                        <input type="radio" class="btn-check" name="Role" id="roleStudent" value="Student" checked autocomplete="off" />
-                        <label class="btn-secondary-premium w-100 text-center d-flex align-items-center justify-content-center gap-2" for="roleStudent">
-                            <i class="bi bi-mortarboard-fill"></i> Öğrenci
-                        </label>
-                    </div>
-                    <div class="flex-fill">
-                        <input type="radio" class="btn-check" name="Role" id="roleEmployer" value="Employer" autocomplete="off" />
-                        <label class="btn-secondary-premium w-100 text-center d-flex align-items-center justify-content-center gap-2" for="roleEmployer">
-                            <i class="bi bi-building-fill"></i> İşveren
-                        </label>
-                    </div>
+                <label asp-for="Role" class="form-label">Hesap Türü</label>
+                <div class="d-grid gap-2" style="grid-template-columns: 1fr 1fr;">
+                    <label class="btn btn-outline-primary rounded-3 py-3">
+                        <input asp-for="Role" type="radio" value="@AppRoles.Student" class="btn-check" checked="@(Model.Role == AppRoles.Student)" />
+                        <i class="bi bi-mortarboard me-1"></i> Öğrenci
+                    </label>
+                    <label class="btn btn-outline-success rounded-3 py-3">
+                        <input asp-for="Role" type="radio" value="@AppRoles.Employer" class="btn-check" checked="@(Model.Role == AppRoles.Employer)" />
+                        <i class="bi bi-building me-1"></i> İşveren
+                    </label>
                 </div>
                 <span asp-validation-for="Role" class="text-danger small mt-1 d-block"></span>
             </div>
@@ -85,6 +80,52 @@
                 </div>
             </div>
 
+            <div id="employerFields" class="d-none">
+                <div class="form-group mb-4">
+                    <label asp-for="EmployerCompanyMode" class="form-label">Şirket Bilgisi</label>
+                    <select asp-for="EmployerCompanyMode" class="glass-input-premium" id="employerCompanyMode">
+                        <option value="Existing">Mevcut şirketi seç</option>
+                        <option value="New">Yeni şirket gir</option>
+                    </select>
+                    <span asp-validation-for="EmployerCompanyMode" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <div id="existingCompanyFields" class="form-group mb-4">
+                    <label asp-for="CompanyId" class="form-label">Mevcut Şirket</label>
+                    <select asp-for="CompanyId" asp-items="Model.Companies" class="glass-input-premium">
+                        <option value="">-- Şirket seçiniz --</option>
+                    </select>
+                    <span asp-validation-for="CompanyId" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <div id="newCompanyFields" class="d-none">
+                    <div class="form-group mb-4">
+                        <label asp-for="CompanyName" class="form-label">Şirket Adı</label>
+                        <div class="input-glass-wrapper">
+                            <i class="bi bi-building input-icon"></i>
+                            <input asp-for="CompanyName" class="glass-input-premium" placeholder="Örn: ABC Yazılım A.Ş." />
+                        </div>
+                        <span asp-validation-for="CompanyName" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label asp-for="CompanySector" class="form-label">Sektör</label>
+                        <div class="input-glass-wrapper">
+                            <i class="bi bi-diagram-3 input-icon"></i>
+                            <input asp-for="CompanySector" class="glass-input-premium" placeholder="Örn: Bilgi Teknolojileri" />
+                        </div>
+                        <span asp-validation-for="CompanySector" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label asp-for="CompanyLocation" class="form-label">Konum</label>
+                        <div class="input-glass-wrapper">
+                            <i class="bi bi-geo-alt input-icon"></i>
+                            <input asp-for="CompanyLocation" class="glass-input-premium" placeholder="Örn: İstanbul, Türkiye" />
+                        </div>
+                        <span asp-validation-for="CompanyLocation" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group mb-4">
@@ -108,11 +149,6 @@
                 </div>
             </div>
 
-            <div id="employerNote" class="alert alert-info d-none py-2 small" style="background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.3); color: var(--text-primary);">
-                <i class="bi bi-info-circle me-1 text-info"></i>
-                İşveren hesabınız oluşturulduktan sonra profilinizden şirket bilgilerinizi tamamlayabilirsiniz.
-            </div>
-
             <button type="submit" class="btn-premium-submit w-100 mb-4 mt-2">
                 <span>Kayıt Ol</span>
                 <i class="bi bi-person-plus-fill"></i>
@@ -127,4 +163,26 @@
 
 @section Scripts {
     <partial name="_ValidationScripts" />
+    <script>
+        const employerFields = document.getElementById('employerFields');
+        const companyMode = document.getElementById('employerCompanyMode');
+        const existingCompanyFields = document.getElementById('existingCompanyFields');
+        const newCompanyFields = document.getElementById('newCompanyFields');
+
+        function updateRegisterFields() {
+            const selectedRole = document.querySelector('input[name="Role"]:checked')?.value;
+            const isEmployer = selectedRole === '@AppRoles.Employer';
+            employerFields.classList.toggle('d-none', !isEmployer);
+
+            const isNewCompany = companyMode.value === 'New';
+            existingCompanyFields.classList.toggle('d-none', !isEmployer || isNewCompany);
+            newCompanyFields.classList.toggle('d-none', !isEmployer || !isNewCompany);
+        }
+
+        document.querySelectorAll('input[name="Role"]').forEach((input) => {
+            input.addEventListener('change', updateRegisterFields);
+        });
+        companyMode.addEventListener('change', updateRegisterFields);
+        updateRegisterFields();
+    </script>
 }

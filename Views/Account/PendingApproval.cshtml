@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Onay Bekleniyor";
+}
+
+<div class="auth-modern-container">
+    <div class="auth-kinetic-map" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div class="auth-modern-card text-center">
+        <div class="auth-modern-header">
+            <div class="logo-wrapper">
+                <i class="bi bi-hourglass-split glow-icon"></i>
+            </div>
+            <h2>İşveren Onayı Bekleniyor</h2>
+            <p>Şirket ve işveren kaydınız Admin tarafından onaylandıktan sonra işveren paneline erişebileceksiniz.</p>
+        </div>
+
+        <form asp-action="Logout" method="post" class="mt-4">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn-premium-submit w-100">
+                <span>Çıkış Yap</span>
+                <i class="bi bi-box-arrow-left"></i>
+            </button>
+        </form>
+    </div>
+</div>
