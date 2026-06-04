@@ -40,8 +40,12 @@ var app = builder.Build();
 // ── Middleware Pipeline ────────────────────────────────────
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Dashboard/Error");
+    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+}
+else
+{
+    app.UseDeveloperExceptionPage();
 }
 
 // app.UseHttpsRedirection();
@@ -86,12 +90,20 @@ app.MapControllerRoute(
 // ── Rol ve Admin Seed ─────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await db.Database.MigrateAsync();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await db.Database.MigrateAsync();
 
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    await SeedData.Initialize(roleManager, userManager, db);
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        await SeedData.Initialize(roleManager, userManager, db);
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Veritabanı migration/seed hatası: {Message}", ex.Message);
+    }
 }
 
 app.Run();
