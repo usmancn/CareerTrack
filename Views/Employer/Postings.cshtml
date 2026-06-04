@@ -73,7 +73,7 @@
                             </form>
                             <form asp-action="DeletePosting" asp-route-id="@posting.Id"
                                   method="post" class="d-inline"
-                                  onsubmit="return confirm('Bu ilanı silmek istediğinize emin misiniz?')">
+                                  onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Bu ilanı silmek istediğinize emin misiniz?');">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                     <i class="bi bi-trash"></i>

@@ -286,11 +286,16 @@ else
     @RenderBody()
 }
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            document.body.appendChild(modal);
+        });
+
         @if (TempData["Success"] != null)
         {
             <text>window.showPremiumToast?.("success", @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]?.ToString())));</text>
@@ -304,6 +309,28 @@ else
             <text>window.showPremiumToast?.("warning", @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Warning"]?.ToString())));</text>
         }
     });
+
+    window.confirmSubmit = function(form, message) {
+        Swal.fire({
+            title: 'Onaylıyor musunuz?',
+            text: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Evet, Onayla',
+            cancelButtonText: 'İptal',
+            background: '#151922',
+            color: '#fff',
+            customClass: {
+                popup: 'rounded-4 border',
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    };
 </script>
 
 @await RenderSectionAsync("Scripts", required: false)

@@ -106,7 +106,7 @@ else
                         {
                             <div class="d-flex gap-1">
                                 <form asp-action="SendToEmployer" asp-route-id="@log.Id" method="post" class="d-inline"
-                                      onsubmit="return confirm('Bu günlüğü işveren onayına göndermek istediğinize emin misiniz?')">
+                                      onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Bu günlüğü işveren onayına göndermek istediğinize emin misiniz?');">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-sm btn-outline-info">
                                         <i class="bi bi-send"></i> Gönder
@@ -119,7 +119,7 @@ else
                                 </button>
 
                                 <form asp-action="Delete" asp-route-id="@log.Id" method="post" class="d-inline"
-                                      onsubmit="return confirm('Bu günlük kaydını silmek istediğinizden emin misiniz?')">
+                                      onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Bu günlük kaydını silmek istediğinizden emin misiniz?');">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                                 </form>

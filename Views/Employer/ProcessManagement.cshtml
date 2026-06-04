@@ -103,12 +103,12 @@
                                             onclick="openUpdateStageDrawer(@app.Id, @((int)app.Status), '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(app.Student?.FullName ?? ""))', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(statusText2))')">
                                         <i class="bi bi-arrow-right-circle me-1"></i>Aşama İlerlet
                                     </button>
-                                    <form asp-action="UpdateApplicationStatus" method="post" class="d-inline">
+                                    <form asp-action="UpdateApplicationStatus" method="post" class="d-inline"
+                                          onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Bu adayı reddetmek istediğinizden emin misiniz?');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@app.Id" />
                                         <input type="hidden" name="status" value="@((int)ApplicationStatus.Rejected)" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"
-                                                onclick="return confirm('Bu adayı reddetmek istediğinizden emin misiniz?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
                                             <i class="bi bi-x-circle"></i>
                                         </button>
                                     </form>

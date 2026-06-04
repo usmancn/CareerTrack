@@ -62,9 +62,10 @@
                     <small class="todo-due-date @(DateTime.Today > todo.DueDate ? "text-danger" : "text-muted")">
                         <i class="bi bi-calendar3 me-1"></i>@todo.DueDate.ToString("dd MMM yyyy")
                     </small>
-                    <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline">
+                    <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline"
+                          onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Görevi sil?');">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn-delete" onclick="return confirm('Görevi sil?')">
+                        <button type="submit" class="btn-delete">
                             <i class="bi bi-x-lg"></i>
                         </button>
                     </form>
@@ -156,9 +157,10 @@
                             <div class="text-decoration-line-through text-muted">@todo.TaskTitle</div>
                             <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>@todo.DueDate.ToString("dd MMM yyyy")</small>
                         </div>
-                        <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline">
+                        <form asp-action="Delete" asp-route-id="@todo.Id" method="post" class="d-inline"
+                              onsubmit="event.preventDefault(); window.confirmSubmit(this, 'Görevi sil?');">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn-delete" onclick="return confirm('Görevi sil?')">
+                            <button type="submit" class="btn-delete">
                                 <i class="bi bi-x-lg"></i>
                             </button>
                         </form>

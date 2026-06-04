@@ -42,22 +42,22 @@
                         <td class="text-end">
                             <div class="d-flex gap-2 justify-content-end">
                                 <!-- Ön Elemeye Al -->
-                                <form asp-action="UpdateApplicationStatus" method="post" class="d-inline">
+                                <form asp-action="UpdateApplicationStatus" method="post" class="d-inline"
+                                      onsubmit="event.preventDefault(); window.confirmSubmit(this, '@app.Student?.FullName adlı adayı Ön Elemeye almak istediğinize emin misiniz?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@app.Id" />
                                     <input type="hidden" name="status" value="@((int)ApplicationStatus.PreScreening)" />
-                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3"
-                                            onclick="return confirm('@app.Student?.FullName adlı adayı Ön Elemeye almak istediğinize emin misiniz?')">
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
                                         <i class="bi bi-check-circle me-1"></i> Ön Elemeye Al
                                     </button>
                                 </form>
                                 <!-- Reddet -->
-                                <form asp-action="UpdateApplicationStatus" method="post" class="d-inline">
+                                <form asp-action="UpdateApplicationStatus" method="post" class="d-inline"
+                                      onsubmit="event.preventDefault(); window.confirmSubmit(this, '@app.Student?.FullName adlı adayı reddetmek istediğinize emin misiniz?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@app.Id" />
                                     <input type="hidden" name="status" value="@((int)ApplicationStatus.Rejected)" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"
-                                            onclick="return confirm('@app.Student?.FullName adlı adayı reddetmek istediğinize emin misiniz?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" title="Reddet">
                                         <i class="bi bi-x-circle me-1"></i> Reddet
                                     </button>
                                 </form>

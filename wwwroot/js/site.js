@@ -40,14 +40,22 @@
         const backdrop = document.querySelector('[data-sidebar-backdrop]');
         if (!sidebar || !toggle) return;
 
+        const isMobile = () => window.innerWidth < 992;
+
         const closeMobileSidebar = () => {
-            sidebar.classList.remove('mobile-open');
-            backdrop?.classList.remove('is-visible');
+            if (isMobile()) {
+                sidebar.classList.remove('mobile-open');
+                backdrop?.classList.remove('is-visible');
+            }
         };
 
         toggle.addEventListener('click', () => {
-            const isOpen = sidebar.classList.toggle('mobile-open');
-            backdrop?.classList.toggle('is-visible', isOpen);
+            if (isMobile()) {
+                const isOpen = sidebar.classList.toggle('mobile-open');
+                backdrop?.classList.toggle('is-visible', isOpen);
+            } else {
+                document.body.classList.toggle('sidebar-collapsed');
+            }
         });
 
         backdrop?.addEventListener('click', closeMobileSidebar);
